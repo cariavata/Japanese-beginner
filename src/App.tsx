@@ -147,10 +147,12 @@ export default function App() {
   
   const [editingItem, setEditingItem] = useState<{tab: string, index: number, item: SentenceItem} | null>(null);
   const [isAddingMode, setIsAddingMode] = useState(false);
+  const [selectedItems, setSelectedItems] = useState<number[]>([]);
   
   useEffect(() => { localStorage.setItem('greetingsData', JSON.stringify(greetingsData)); }, [greetingsData]);
   useEffect(() => { localStorage.setItem('travelData', JSON.stringify(travelData)); }, [travelData]);
   useEffect(() => { localStorage.setItem('dailyData', JSON.stringify(dailyData)); }, [dailyData]);
+  useEffect(() => { setSelectedItems([]); }, [activeTab]);
 
   const [letterType, setLetterType] = useState<'hiragana' | 'katakana'>('hiragana');
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
@@ -480,17 +482,57 @@ export default function App() {
                   />
                 </div>
                 {isAdmin && (
-                  <button onClick={() => setIsAddingMode(true)} className="flex items-center gap-1 bg-[#4ECDC4] text-white px-3 py-1.5 md:px-4 md:py-2 rounded-xl hover:bg-[#45B7AF] transition-all font-bold shadow-md">
-                    <Plus size={16} />
-                    <span className="text-sm">추가</span>
-                  </button>
+                  <div className="flex items-center gap-2">
+                    {selectedItems.length > 0 && (
+                      <button 
+                        onClick={() => {
+                          if(window.confirm(`선택한 ${selectedItems.length}개의 문장을 삭제하시겠습니까?`)) {
+                            const remover = (prev: any[]) => prev.filter((_, idx) => !selectedItems.includes(idx));
+                            if(activeTab === 'greetings') setGreetingsData(remover);
+                            if(activeTab === 'travel') setTravelData(remover);
+                            if(activeTab === 'daily') setDailyData(remover);
+                            setSelectedItems([]);
+                          }
+                        }} 
+                        className="flex items-center gap-1 bg-red-500 text-white px-3 py-1.5 md:px-4 md:py-2 rounded-xl hover:bg-red-400 transition-all font-bold shadow-md"
+                      >
+                        <Trash2 size={16} />
+                        <span className="text-sm">선택 삭제</span>
+                      </button>
+                    )}
+                    <button onClick={() => setIsAddingMode(true)} className="flex items-center gap-1 bg-[#4ECDC4] text-white px-3 py-1.5 md:px-4 md:py-2 rounded-xl hover:bg-[#45B7AF] transition-all font-bold shadow-md">
+                      <Plus size={16} />
+                      <span className="text-sm">추가</span>
+                    </button>
+                  </div>
                 )}
               </div>
 
-
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {(activeTab === 'greetings' ? greetingsData : activeTab === 'travel' ? travelData : dailyData).map((item, i) => (
-                  <SentenceCard key={`${activeTab}-${i}`} index={i} item={item} onPlay={speakText} />
+                  <SentenceCard 
+                    key={`${activeTab}-${i}`} 
+                    index={i} 
+                    item={item} 
+                    onPlay={speakText}
+                    isAdmin={isAdmin} 
+                    isSelected={selectedItems.includes(i)}
+                    onToggleSelect={() => {
+                      setSelectedItems(prev => 
+                        prev.includes(i) ? prev.filter(idx => idx !== i) : [...prev, i]
+                      )
+                    }}
+                    onEdit={() => setEditingItem({tab: activeTab, index: i, item})}
+                    onDelete={() => {
+                      if(window.confirm('정말 삭제하시겠습니까?')) {
+                        const remover = (prev: any[]) => prev.filter((_, idx) => idx !== i);
+                        if(activeTab === 'greetings') setGreetingsData(remover);
+                        if(activeTab === 'travel') setTravelData(remover);
+                        if(activeTab === 'daily') setDailyData(remover);
+                        setSelectedItems(prev => prev.filter(idx => idx !== i));
+                      }
+                    }}
+                  />
                 ))}
               </div>
             </motion.section>
@@ -623,20 +665,30 @@ interface SentenceCardProps {
   index: number;
   onPlay: (t: string) => void;
   isAdmin?: boolean;
+  isSelected?: boolean;
+  onToggleSelect?: () => void;
   onEdit?: () => void;
   onDelete?: () => void;
 }
 
-
-
-const SentenceCard: FC<SentenceCardProps> = ({ item, index, onPlay, isAdmin, onEdit, onDelete }) => {
+const SentenceCard: FC<SentenceCardProps> = ({ item, index, onPlay, isAdmin, isSelected, onToggleSelect, onEdit, onDelete }) => {
   return (
     <motion.div 
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.01 }}
-      className="flex items-center justify-between p-3 md:p-5 bg-[#F8F9FA] border-l-[6px] md:border-l-[10px] border-[#FF9B9B] rounded-xl md:rounded-2xl hover:bg-white hover:shadow-lg transition-all group relative"
+      className={`flex items-center justify-between p-3 md:p-5 bg-[#F8F9FA] border-l-[6px] md:border-l-[10px] ${isSelected ? 'border-red-500 bg-red-50' : 'border-[#FF9B9B]'} rounded-xl md:rounded-2xl hover:bg-white hover:shadow-lg transition-all group relative`}
     >
+      {isAdmin && (
+        <div className="mr-3 flex items-center justify-center">
+          <input 
+            type="checkbox" 
+            checked={isSelected}
+            onChange={onToggleSelect}
+            className="w-5 h-5 rounded border-gray-300 text-red-500 focus:ring-red-500 shrink-0 cursor-pointer"
+          />
+        </div>
+      )}
       <div className="flex-1 pr-3 md:pr-6 min-w-0">
         <div className="flex flex-col">
           <span className="text-sm md:text-xl font-bold text-gray-800 leading-tight mb-0.5 truncate">{item.jp}</span>
