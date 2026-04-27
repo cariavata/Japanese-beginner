@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, FC } from 'react';
 import { Volume2, Plane, Home, MessageSquare, Info } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -20,7 +20,7 @@ const hiraganaData: CharData = [
   { jp: 'あ', ko: '아' }, { jp: 'い', ko: '이' }, { jp: 'う', ko: '우' }, { jp: 'え', ko: '에' }, { jp: 'お', ko: '오' },
   { jp: 'か', ko: '카' }, { jp: 'き', ko: '키' }, { jp: 'く', ko: '쿠' }, { jp: 'け', ko: '케' }, { jp: 'こ', ko: '코' },
   { jp: 'さ', ko: '사' }, { jp: 'し', ko: '시' }, { jp: 'す', ko: '스' }, { jp: 'せ', ko: '세' }, { jp: 'そ', ko: '소' },
-  { jp: '타', ko: '타' }, { jp: 'ち', ko: '치' }, { jp: 'つ', ko: '츠' }, { jp: 'て', ko: '테' }, { jp: 'と', ko: '토' },
+  { jp: 'た', ko: '타' }, { jp: 'ち', ko: '치' }, { jp: 'つ', ko: '츠' }, { jp: 'て', ko: '테' }, { jp: 'と', ko: '토' },
   { jp: 'な', ko: '나' }, { jp: 'に', ko: '니' }, { jp: 'ぬ', ko: '누' }, { jp: 'ね', ko: '네' }, { jp: 'の', ko: '노' },
   { jp: 'は', ko: '하' }, { jp: 'ひ', ko: '히' }, { jp: 'ふ', ko: '후' }, { jp: 'へ', ko: '헤' }, { jp: 'ほ', ko: '호' },
   { jp: 'ま', ko: '마' }, { jp: 'み', ko: '미' }, { jp: 'む', ko: '무' }, { jp: '메', ko: '메' }, { jp: 'も', ko: '모' },
@@ -39,7 +39,7 @@ const katakanaData: CharData = [
   { jp: 'ハ', ko: '하' }, { jp: 'ヒ', ko: '히' }, { jp: 'フ', ko: '후' }, { jp: 'ヘ', ko: '헤' }, { jp: 'ホ', ko: '호' },
   { jp: 'マ', ko: '마' }, { jp: 'ミ', ko: '미' }, { jp: 'ム', ko: '무' }, { jp: 'メ', ko: '메' }, { jp: 'モ', ko: '모' },
   { jp: 'ヤ', ko: '야' }, null, { jp: 'ユ', ko: '유' }, null, { jp: 'ヨ', ko: '요' },
-  { jp: 'ラ', ko: '라' }, { jp: '리', ko: '리' }, { jp: 'ル', ko: '루' }, { jp: 'レ', ko: '레' }, { jp: 'ロ', ko: '로' },
+  { jp: 'ラ', ko: '라' }, { jp: 'リ', ko: '리' }, { jp: 'ル', ko: '루' }, { jp: 'レ', ko: '레' }, { jp: 'ロ', ko: '로' },
   { jp: 'ワ', ko: '와' }, null, null, null, { jp: 'ヲ', ko: '오(조사)' },
   { jp: 'ン', ko: '응' }, null, null, null, null
 ];
@@ -76,7 +76,7 @@ const greetingsData: SentenceItem[] = [
 const travelData: SentenceItem[] = [
   { jp: '荷物はどこですか', ko: '니모츠와 도코데스카', mean: '수하물은 어디있나요?' },
   { jp: 'タクシー乗り場はどこですか', ko: '타쿠시- 노리바와 도코데스카', mean: '택시 승강장은 어디인가요?' },
-  { jp: '東京駅까지 가나요?', ko: '토-쿄-에키마데 이키마스카', mean: '도쿄역까지 가나요?' },
+  { jp: '東京駅まで行きますか', ko: '토-쿄-에키마데 이키마스카', mean: '도쿄역까지 가나요?' },
   { jp: '切符売り場はどこですか', ko: '킵푸 우리바와 도코데스카', mean: '매표소는 어디인가요?' },
   { jp: 'ここへ行ってください', ko: '코코에 잇테 쿠다사이', mean: '여기로 가주세요' },
   { jp: '次の駅はどこですか', ko: '츠기노 에키와 도코데스카', mean: '다음 역은 어디인가요?' },
@@ -119,8 +119,8 @@ const travelData: SentenceItem[] = [
   { jp: '駅はどちらですか', ko: '에키와 도치라데스카', mean: '역은 어느 쪽인가요?' },
   { jp: '迷子になりました', ko: '마이고니 나리마시타', mean: '길을 잃었습니다' },
   { jp: '助けてください', ko: '타스케테 쿠다사이', mean: '도와주세요!' },
-  { jp: '警察을 불러주세요!', ko: '케이사츠오 욘데 쿠다사이', mean: '경찰을 불러주세요!' },
-  { jp: '救急車를 불러주세요!', ko: '큐-큐-샤오 욘데 쿠다사이', mean: '구급차를 불러주세요!' },
+  { jp: '警察を呼んでください', ko: '케이사츠오 욘데 쿠다사이', mean: '경찰을 불러주세요!' },
+  { jp: '救急車を呼んでください', ko: '큐-큐-샤오 욘데 쿠다사이', mean: '구급차를 불러주세요!' },
   { jp: 'パスポートをなくしました', ko: '파스포-토오 나쿠시마시타', mean: '여권을 잃어버렸습니다' },
   { jp: '財布を盗まれました', ko: '사이후오 누수마레마시타', mean: '지갑을 도둑맞았습니다' },
   { jp: '韓国の領事館はどこですか', ko: '칸코쿠노 료-지칸와 도코데스카', mean: '한국 영사관은 어디인가요?' }
@@ -150,7 +150,7 @@ const dailyData: SentenceItem[] = [
   { jp: 'いってきます', ko: '잇테키마스', mean: '다녀오겠습니다' },
   { jp: 'いってらっしゃい', ko: '잇테랏샤이', mean: '다녀오세요' },
   { jp: 'ただいま', ko: '타다이마', mean: '다녀왔습니다' },
-  { jp: 'おかえ리나사이', ko: '오카에리나사이', mean: '다녀오셨어요' },
+  { jp: 'おかえりなさい', ko: '오카에리나사이', mean: '다녀오셨어요' },
   { jp: 'いただきます', ko: '이타다키마스', mean: '잘 먹겠습니다' },
   { jp: 'ごちそうさまでした', ko: '고치소-사마데시타', mean: '잘 먹었습니다' },
   { jp: 'また明日', ko: '마타 아시타', mean: '내일 봐요' },
@@ -397,7 +397,13 @@ function SectionHeader({ title, description, color }: { title: string, descripti
   );
 }
 
-function SentenceCard({ item, index, onPlay }: { item: SentenceItem, index: number, onPlay: (t: string) => void }) {
+interface SentenceCardProps {
+  item: SentenceItem;
+  index: number;
+  onPlay: (t: string) => void;
+}
+
+const SentenceCard: FC<SentenceCardProps> = ({ item, index, onPlay }) => {
   return (
     <motion.div 
       initial={{ opacity: 0, y: 10 }}
