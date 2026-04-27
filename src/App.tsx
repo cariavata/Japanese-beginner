@@ -191,8 +191,38 @@ export default function App() {
   }, []);
 
   const speakText = useCallback((text: string) => {
-    if (!('speechSynthesis' in window)) {
-      alert("현재 브라우저는 음성 듣기 기능을 지원하지 않습니다.");
+    const playAudioFallback = (text: string) => {
+      const url = `https://translate.googleapis.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(text)}&tl=ja&client=tw-ob`;
+      const audio = new Audio(url);
+      
+      audio.onplay = () => {
+        if (audioRef.current) {
+          audioRef.current.volume = 0.02;
+        }
+      };
+      
+      const restoreVolume = () => {
+        if (audioRef.current) {
+          audioRef.current.volume = 0.05;
+        }
+      };
+      
+      audio.onended = restoreVolume;
+      audio.onerror = (e) => {
+        console.error("Fallback TTS Error:", e);
+        restoreVolume();
+      };
+      
+      audio.play().catch(err => {
+        console.error("Fallback audio blocked", err);
+        restoreVolume();
+      });
+    };
+
+    const isMobileInAppOrNoTTS = !('speechSynthesis' in window) || /KAKAOTALK|NAVER|Line|Instagram|FBAN|FBAV/i.test(navigator.userAgent);
+
+    if (isMobileInAppOrNoTTS) {
+      playAudioFallback(text);
       return;
     }
 
