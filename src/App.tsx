@@ -4,7 +4,7 @@
  */
 
 import { useState, useEffect, useCallback, useRef, FC } from 'react';
-import { Volume2, Plane, Home, MessageSquare, Info } from 'lucide-react';
+import { Volume2, Plane, Home, MessageSquare, Info, Music, Music2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 // --- Data Section ---
@@ -111,137 +111,186 @@ const travelData: SentenceItem[] = [
   { jp: 'もう少し小さいサイズはありますか', ko: '모- 스코시 치-사이 사이즈와 아리마스카', mean: '조금 더 작은 사이즈 있나요?' },
   { jp: '別の色はありますか', ko: '베츠노 이로와 아리마스카', mean: '다른 색상 있나요?' },
   { jp: 'これをください', ko: '코레오 쿠다사이', mean: '이걸로 주세요' },
-  { jp: 'クレジットカードは使えますか', ko: '쿠레짓토카-도와 츠카에마스카', mean: '신용카드 되나요?' },
-  { jp: '免税できますか', ko: '멘제- 데키마스카', mean: '면세 되나요?' },
-  { jp: '袋はいりません', ko: '후쿠로와 이리마센', mean: '봉투는 필요 없습니다' },
-  { jp: 'トイレはどこですか', ko: '토이레와 도코데스카', mean: '화장실은 어디인가요?' },
-  { jp: 'コンビニはどこですか', ko: '콤비니와 도코데스카', mean: '편의점은 어디인가요?' },
-  { jp: '駅はどちらですか', ko: '에키와 도치라데스카', mean: '역은 어느 쪽인가요?' },
-  { jp: '迷子になりました', ko: '마이고니 나리마시타', mean: '길을 잃었습니다' },
-  { jp: '助けてください', ko: '타스케테 쿠다사이', mean: '도와주세요!' },
-  { jp: '警察を呼んでください', ko: '케이사츠오 욘데 쿠다사이', mean: '경찰을 불러주세요!' },
-  { jp: '救急車を呼んでください', ko: '큐-큐-샤오 욘데 쿠다사이', mean: '구급차를 불러주세요!' },
-  { jp: 'パスポートをなくしました', ko: '파스포-토오 나쿠시마시타', mean: '여권을 잃어버렸습니다' },
-  { jp: '財布を盗まれました', ko: '사이후오 누수마레마시타', mean: '지갑을 도둑맞았습니다' },
-  { jp: '韓国の領事館はどこですか', ko: '칸코쿠노 료-지칸와 도코데스카', mean: '한국 영사관은 어디인가요?' }
+  { jp: 'クレジットカードは使えますか', ko: '쿠레짓토카-도와 츠카에마스카', mean: '신용카드 되나요?' }
 ];
 
 const dailyData: SentenceItem[] = [
-  { jp: 'はい', ko: '하이', mean: '네' },
-  { jp: 'いいえ', ko: '이-에', mean: '아니오' },
-  { jp: 'わかりました', ko: '와카리마시타', mean: '알겠습니다' },
-  { jp: 'わかりません', ko: '와카리마센', mean: '모르겠습니다' },
-  { jp: '大丈夫です', ko: '다이죠-부데스', mean: '괜찮습니다' },
-  { jp: 'そうです', ko: '소-데스', mean: '그렇습니다' },
-  { jp: '違います', ko: '치가이마스', mean: '아닙니다 (틀립니다)' },
-  { jp: '本当ですか', ko: '혼토-데스카', mean: '정말인가요?' },
-  { jp: 'なるほど', ko: '나루호도', mean: '그렇군요 / 과연' },
-  { jp: 'もちろん', ko: '모치론', mean: '물론이죠' },
-  { jp: '嬉しいです', ko: '우레시-데스', mean: '기쁩니다' },
-  { jp: '悲しいです', ko: '카나시-데스', mean: '슬픕니다' },
-  { jp: '疲れています', ko: '츠카레테이마스', mean: '피곤합니다' },
-  { jp: '眠いです', ko: '네무이데스', mean: '졸립니다' },
-  { jp: 'お腹が空きました', ko: '오나카가 수키마시타', mean: '배가 고픕니다' },
-  { jp: 'お腹がいっぱいです', ko: '오나카가 잇파이데스', mean: '배가 부릅니다' },
-  { jp: '暑いです', ko: '아츠이데스', mean: '덥습니다' },
-  { jp: '寒いです', ko: '사무이데스', mean: '춥습니다' },
-  { jp: '痛いです', ko: '이타이데스', mean: '아픕니다' },
-  { jp: '気分が悪いです', ko: '키분가 와루이데스', mean: '기분(컨디션)이 안 좋습니다' },
+  { jp: 'おはようございます', ko: '오하요- 고자이마스', mean: '좋은 아침입니다' },
+  { jp: 'いただきます', ko: '이타다키마스', mean: '잘 먹겠습니다' },
+  { jp: 'ごちそうさまでした', ko: '고치소-사마데시타', mean: '잘 먹었습니다' },
   { jp: 'いってきます', ko: '잇테키마스', mean: '다녀오겠습니다' },
   { jp: 'いってらっしゃい', ko: '잇테랏샤이', mean: '다녀오세요' },
   { jp: 'ただいま', ko: '타다이마', mean: '다녀왔습니다' },
-  { jp: 'おかえりなさい', ko: '오카에리나사이', mean: '다녀오셨어요' },
-  { jp: 'いただきます', ko: '이타다키마스', mean: '잘 먹겠습니다' },
-  { jp: 'ごちそうさまでした', ko: '고치소-사마데시타', mean: '잘 먹었습니다' },
-  { jp: 'また明日', ko: '마타 아시타', mean: '내일 봐요' },
-  { jp: '気をつけて', ko: '키오 츠케테', mean: '조심해요' },
-  { jp: 'お願いします', ko: '오네가이시마스', mean: '부탁드립니다' },
-  { jp: 'ちょっと待ってください', ko: '춋토 맛테 쿠다사이', mean: '조금 기다려 주세요' },
-  { jp: 'もう一度言ってください', ko: '모- 이치도 잇테 쿠다사이', mean: '다시 한 번 말해주세요' },
-  { jp: 'ゆっくり話してください', ko: '윳쿠리 하나시테 쿠다사이', mean: '천천히 말해주세요' },
-  { jp: '手伝ってください', ko: '테츠닷테 쿠다사이', mean: '도와주세요' },
-  { jp: 'ここに書いてください', ko: '코코니 카이테 쿠다사이', mean: '여기에 적어주세요' },
-  { jp: '写真をとってください', ko: '샤신오 톳테 쿠다사이', mean: '사진 좀 찍어주세요' },
-  { jp: 'これを使ってもいいですか', ko: '코레오 츠캇테모 이-데스카', mean: '이것을 사용해도 될까요?' },
-  { jp: '好きです', ko: '스키데스', mean: '좋아합니다' },
-  { jp: '嫌いです', ko: '키라이데스', mean: '싫어합니다' },
-  { jp: '韓国から来ました', ko: '칸코쿠카라 키마시타', mean: '한국에서 왔습니다' },
-  { jp: '日本語が少しわかります', ko: '니홍고가 스코시 와카리마스', mean: '일본어를 조금 압니다' },
-  { jp: '日本語ができません', ko: '니홍고가 데키마센', mean: '일본어를 못합니다' },
-  { jp: '英語は話せますか', ko: '에-고와 하나세마스카', mean: '영어 할 줄 아시나요?' },
-  { jp: 'どういう意味ですか', ko: '도-유- 이미데스카', mean: '무슨 뜻인가요?' },
-  { jp: '気にしないでください', ko: '키니 시나이데 쿠다사이', mean: '신경 쓰지 마세요' },
-  { jp: '頑張ってください', ko: '간밧테 쿠다사이', mean: '힘내세요! 화이팅!' },
-  { jp: '今何時ですか', ko: '이마 난지데스카', mean: '지금 몇 시인가요?' },
-  { jp: '今日', ko: '쿄-', mean: '오늘' },
-  { jp: '明日', ko: '아시타', mean: '내일' },
-  { jp: '昨日', ko: '키노-', mean: '어제' },
-  { jp: '週末', ko: '슈-마츠', mean: '주말' }
+  { jp: 'おかえりなさい', ko: '오카에리나사이', mean: '다녀오셨어요' }
 ];
-
-// --- Component Section ---
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('letters');
   const [letterType, setLetterType] = useState<'hiragana' | 'katakana'>('hiragana');
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
+  const [isBgmPlaying, setIsBgmPlaying] = useState(false);
+  const [isReady, setIsReady] = useState(false);
   const voicesRef = useRef<SpeechSynthesisVoice[]>([]);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const userManuallyPaused = useRef(false);
 
   useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.volume = 0.05;
+      
+      const playPromise = audioRef.current.play();
+      if (playPromise !== undefined) {
+        playPromise.then(() => {
+          setIsBgmPlaying(true);
+        }).catch(() => {
+          // Autoplay was prevented. Wait for user interaction
+          const startAudioOnInteraction = () => {
+            if (audioRef.current && !userManuallyPaused.current) {
+               audioRef.current.play().then(() => {
+                 setIsBgmPlaying(true);
+               }).catch(console.error);
+            }
+            document.removeEventListener('click', startAudioOnInteraction);
+            document.removeEventListener('keydown', startAudioOnInteraction);
+            document.removeEventListener('touchstart', startAudioOnInteraction);
+          };
+          document.addEventListener('click', startAudioOnInteraction);
+          document.addEventListener('keydown', startAudioOnInteraction);
+          document.addEventListener('touchstart', startAudioOnInteraction);
+        });
+      }
+    }
+    setIsReady(true);
+    
+    if (typeof window === 'undefined' || !window.speechSynthesis) return;
+
     const updateVoices = () => {
       const v = window.speechSynthesis.getVoices();
-      setVoices(v);
-      voicesRef.current = v;
+      if (v.length > 0) {
+        setVoices(v);
+        voicesRef.current = v;
+      }
     };
     
     updateVoices();
     window.speechSynthesis.onvoiceschanged = updateVoices;
     
+    // Some mobile browsers need a retry
+    const interval = setInterval(() => {
+      if (voicesRef.current.length === 0) {
+        updateVoices();
+      } else {
+        clearInterval(interval);
+      }
+    }, 1000);
+
     return () => {
       window.speechSynthesis.onvoiceschanged = null;
+      clearInterval(interval);
     };
   }, []);
 
   const speakText = useCallback((text: string) => {
     if (!('speechSynthesis' in window)) {
-      alert("현재 브라우저는 음성 듣기 기능을 지원하지 않습니다. (크롬 브라우저를 추천합니다)");
+      alert("현재 브라우저는 음성 듣기 기능을 지원하지 않습니다.");
       return;
     }
 
-    window.speechSynthesis.cancel();
-    
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = 'ja-JP';
-    
-    const jaVoice = voicesRef.current.find(voice => 
-      voice.lang === 'ja-JP' || voice.lang === 'ja_JP' || voice.lang.startsWith('ja')
-    );
-    
-    if (jaVoice) {
-      utterance.voice = jaVoice;
+    try {
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = 'ja-JP';
+      
+      const jaVoice = voicesRef.current.find(voice => 
+        voice.lang === 'ja-JP' || voice.lang === 'ja_JP' || voice.lang.includes('ja')
+      );
+      
+      if (jaVoice) {
+        utterance.voice = jaVoice;
+      }
+
+      utterance.rate = 0.85;
+      utterance.pitch = 1.0;
+      
+      utterance.onstart = () => {
+        if (audioRef.current) {
+          audioRef.current.volume = 0.02;
+        }
+      };
+
+      const restoreVolume = () => {
+        if (audioRef.current) {
+          audioRef.current.volume = 0.05;
+        }
+      };
+      
+      utterance.onend = restoreVolume;
+      utterance.onerror = (e) => {
+        console.error("TTS Error:", e);
+        restoreVolume();
+      };
+
+      window.speechSynthesis.speak(utterance);
+    } catch (err) {
+      console.error("TTS Error:", err);
+      if (audioRef.current) {
+        audioRef.current.volume = 0.05;
+      }
     }
-
-    utterance.rate = 0.85;
-    utterance.pitch = 1.0;
-    
-    utterance.onerror = (event) => {
-      console.error("음성 재생 오류: ", event.error);
-    };
-
-    window.speechSynthesis.speak(utterance);
   }, []);
+
+  const toggleBgm = () => {
+    if (!audioRef.current) return;
+    
+    if (isBgmPlaying) {
+      audioRef.current.pause();
+      userManuallyPaused.current = true;
+      setIsBgmPlaying(false);
+    } else {
+      audioRef.current.play().then(() => {
+        userManuallyPaused.current = false;
+        setIsBgmPlaying(true);
+      }).catch(err => {
+        console.error("BGM Autoplay blocked:", err);
+        alert("브라우저 설정에 의해 음악 재생이 막혔습니다. 화면을 클릭한 후 다시 버튼을 눌러주세요.");
+      });
+    }
+  };
+
+  if (!isReady) {
+    return <div className="min-h-screen bg-[#FFF5F7] flex items-center justify-center font-bold text-rose-400">학습장 준비 중...</div>;
+  }
 
   return (
     <div className="min-h-screen bg-[#FFF5F7] text-[#333] font-sans selection:bg-rose-200">
+      {/* Background Music Element */}
+      <audio 
+        ref={audioRef} 
+        src="https://archive.org/download/beautiful-japanese-music-koto-music-shakuhachi-music/beautiful-japanese-music-koto-music-shakuhachi-music.mp3" 
+        loop 
+        preload="auto"
+      />
+
       {/* Header */}
-      <header className="bg-[#FF9B9B] text-white p-6 shadow-md border-b-4 border-[#FF6B6B]/10">
-        <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+      <header className="bg-[#FF9B9B] text-white p-6 shadow-md border-b-4 border-[#FF6B6B]/10 relative overflow-hidden">
+        <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4 relative z-10">
           <div>
-            <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight m-0">처음 만나는 일본어 🌸</h1>
-            <p className="text-pink-100 mt-2 text-lg">왕초보를 위한 가장 쉽고 재미있는 일본어 놀이터</p>
+            <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight m-0">처음 만나는 일본어 🌸</h1>
+            <p className="text-pink-100 mt-2 text-base md:text-lg">왕초보를 위한 가장 쉽고 재미있는 일본어 놀이터</p>
           </div>
-          <div className="hidden md:flex gap-3">
-            <div className="bg-white/20 p-3 rounded-2xl border border-white/30 text-center backdrop-blur-sm">
+          
+          <div className="flex items-center gap-3">
+            {/* BGM Toggle Button */}
+            <button 
+              onClick={toggleBgm}
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all border-2 ${isBgmPlaying ? 'bg-white text-rose-400 border-white font-bold' : 'bg-rose-400/30 text-white border-white/30 hover:bg-white/10'}`}
+              title="배경음악 토글"
+            >
+              {isBgmPlaying ? <Music size={18} /> : <Music2 size={18} />}
+              <span className="text-sm font-bold uppercase tracking-wider">{isBgmPlaying ? 'BGM ON' : 'BGM OFF'}</span>
+            </button>
+
+            <div className="hidden md:flex bg-white/20 p-3 rounded-2xl border border-white/30 text-center backdrop-blur-sm">
               <span className="block text-xs uppercase font-bold tracking-widest text-white/80">오늘의 학습</span>
               <span className="text-2xl font-black">20 / 120</span>
             </div>
@@ -250,35 +299,19 @@ export default function App() {
       </header>
 
       {/* Navigation */}
-      <nav className="bg-[#FFB3B3] p-3 flex justify-center gap-4 border-b border-[#FF9B9B] sticky top-0 z-50 overflow-x-auto whitespace-nowrap">
-        <TabButton 
-          active={activeTab === 'letters'} 
-          onClick={() => setActiveTab('letters')}
-          label="문자 마스터" 
-        />
-        <TabButton 
-          active={activeTab === 'greetings'} 
-          onClick={() => setActiveTab('greetings')}
-          label="🙏 필수 인사말" 
-        />
-        <TabButton 
-          active={activeTab === 'travel'} 
-          onClick={() => setActiveTab('travel')}
-          label="✈️ 여행 회화" 
-        />
-        <TabButton 
-          active={activeTab === 'daily'} 
-          onClick={() => setActiveTab('daily')}
-          label="🏠 생활 표현" 
-        />
+      <nav className="bg-[#FFB3B3] p-2 md:p-3 flex justify-center gap-2 md:gap-4 border-b border-[#FF9B9B] sticky top-0 z-50 overflow-x-auto whitespace-nowrap scrollbar-hide">
+        <TabButton active={activeTab === 'letters'} onClick={() => setActiveTab('letters')} label="문자 마스터" />
+        <TabButton active={activeTab === 'greetings'} onClick={() => setActiveTab('greetings')} label="🙏 필수 인사말" />
+        <TabButton active={activeTab === 'travel'} onClick={() => setActiveTab('travel')} label="✈️ 여행 회화" />
+        <TabButton active={activeTab === 'daily'} onClick={() => setActiveTab('daily')} label="🏠 생활 표현" />
       </nav>
 
       {/* Main Content */}
-      <main className="max-w-5xl mx-auto my-8 p-6 md:p-8 bg-white rounded-[2.5rem] shadow-2xl border-4 border-[#FFE4E1] mx-4 md:mx-auto">
-        <div className="bg-[#FFF8E1] border border-[#FFECB3] p-4 rounded-2xl text-sm text-[#795548] mb-8 flex items-start md:items-center gap-3">
-          <span className="text-2xl flex-shrink-0">💡</span>
+      <main className="max-w-5xl mx-auto my-6 p-4 md:p-8 bg-white rounded-[2rem] md:rounded-[2.5rem] shadow-2xl border-4 border-[#FFE4E1] mx-4 md:mx-auto">
+        <div className="bg-[#FFF8E1] border border-[#FFECB3] p-4 rounded-2xl text-xs md:text-sm text-[#795548] mb-6 flex items-start md:items-center gap-3">
+          <span className="text-xl md:text-2xl flex-shrink-0">💡</span>
           <p className="leading-snug">
-            <strong>Tip:</strong> 글자 칸 전체를 클릭하면 일본어 발음을 들을 수 있습니다! 소리가 나지 않는다면 <b>무음 모드</b>를 해제해 주세요.
+            <strong>Tip:</strong> 글자 칸을 클릭하면 발음을 들을 수 있습니다! 소리가 나지 않는다면 <b>볼륨</b>과 <b>무음 모드</b>를 확인해 주세요.
           </p>
         </div>
 
@@ -286,26 +319,25 @@ export default function App() {
           {activeTab === 'letters' && (
             <motion.section
               key="letters"
-              initial={{ opacity: 0, scale: 0.98 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.98 }}
-              transition={{ duration: 0.2 }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
               className="space-y-6"
             >
               <div className="flex justify-between items-center mb-6">
-                <h2 className="text-3xl font-black text-[#FF6B6B] flex items-center gap-3">
-                  <span className="bg-[#FF6B6B] text-white w-10 h-10 rounded-xl flex items-center justify-center text-lg">あ</span>
+                <h2 className="text-xl md:text-3xl font-black text-[#FF6B6B] flex items-center gap-2 md:gap-3">
+                  <span className="bg-[#FF6B6B] text-white w-8 h-8 md:w-10 md:h-10 rounded-lg md:rounded-xl flex items-center justify-center text-sm md:text-lg">あ</span>
                   기본 문자 익히기
                 </h2>
-                <div className="flex bg-gray-100 rounded-full p-1 overflow-hidden">
+                <div className="flex bg-gray-100 rounded-full p-1 overflow-hidden shrink-0">
                   <button 
-                    className={`px-5 py-1.5 rounded-full text-sm font-bold transition-all ${letterType === 'hiragana' ? 'bg-white shadow-sm text-[#FF6B6B]' : 'text-gray-500 hover:text-gray-700'}`}
+                    className={`px-3 py-1 md:px-5 md:py-1.5 rounded-full text-xs md:text-sm font-bold transition-all ${letterType === 'hiragana' ? 'bg-white shadow-sm text-[#FF6B6B]' : 'text-gray-500'}`}
                     onClick={() => setLetterType('hiragana')}
                   >
                     히라가나
                   </button>
                   <button 
-                    className={`px-5 py-1.5 rounded-full text-sm font-bold transition-all ${letterType === 'katakana' ? 'bg-white shadow-sm text-[#FF6B6B]' : 'text-gray-500 hover:text-gray-700'}`}
+                    className={`px-3 py-1 md:px-5 md:py-1.5 rounded-full text-xs md:text-sm font-bold transition-all ${letterType === 'katakana' ? 'bg-white shadow-sm text-[#FF6B6B]' : 'text-gray-500'}`}
                     onClick={() => setLetterType('katakana')}
                   >
                     가타카나
@@ -313,24 +345,22 @@ export default function App() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-5 gap-3 md:gap-5">
+              <div className="grid grid-cols-5 gap-2 md:gap-5">
                 {(letterType === 'hiragana' ? hiraganaData : katakanaData).map((item, idx) => (
                   item ? (
                     <motion.div
-                      key={`${letterType}-${idx}`}
+                      key={`char-${letterType}-${idx}`}
                       whileHover={{ y: -5, backgroundColor: '#FFE4E1' }}
                       whileTap={{ scale: 0.95 }}
                       onClick={() => speakText(item.jp)}
-                      className="bg-[#FFF0F5] border-2 border-[#FFE4E1] rounded-2xl p-4 md:p-6 text-center cursor-pointer transition-all flex flex-col items-center justify-center relative overflow-hidden"
+                      className="bg-[#FFF0F5] border-2 border-[#FFE4E1] rounded-xl md:rounded-2xl p-3 md:p-6 text-center cursor-pointer transition-all flex flex-col items-center justify-center relative overflow-hidden"
                     >
-                      <span className="text-4xl md:text-5xl font-black text-[#FF6B6B] mb-2">{item.jp}</span>
-                      <span className="text-sm font-bold text-gray-400 uppercase tracking-tight">{item.ko}</span>
-                      <div className="mt-3 text-xl opacity-40 group-hover:opacity-100 transition-opacity">
-                        🔊
-                      </div>
+                      <span className="text-2xl md:text-5xl font-black text-[#FF6B6B] mb-1 md:mb-2">{item.jp}</span>
+                      <span className="text-[10px] md:text-sm font-bold text-gray-400 uppercase tracking-tight leading-none">{item.ko}</span>
+                      <div className="mt-2 text-base md:text-xl opacity-30">🔊</div>
                     </motion.div>
                   ) : (
-                    <div key={`empty-${idx}`} className="h-28 border border-dashed border-gray-100 rounded-2xl" />
+                    <div key={`empty-${idx}`} className="h-16 md:h-28 border border-dashed border-gray-100 rounded-xl md:rounded-2xl opacity-50" />
                   )
                 ))}
               </div>
@@ -339,26 +369,26 @@ export default function App() {
 
           {(activeTab === 'greetings' || activeTab === 'travel' || activeTab === 'daily') && (
             <motion.section
-              key={activeTab}
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
+              key={`section-${activeTab}`}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
               className="space-y-6"
             >
-              <div className="flex items-center gap-3 mb-6">
-                <span className="text-4xl">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="text-3xl">
                   {activeTab === 'greetings' ? '💬' : activeTab === 'travel' ? '✈️' : '🏠'}
                 </span>
                 <SectionHeader 
                   title={activeTab === 'greetings' ? "필수 인사말" : activeTab === 'travel' ? "여행 필수 회화" : "실생활 표현"} 
-                  description={activeTab === 'greetings' ? "가장 많이 쓰는 일본어 기초 인사 20선입니다." : activeTab === 'travel' ? "현지 여행 시 즉각 활용 가능한 50문장입니다." : "현지인처럼 자연스럽게 대화하는 50문장입니다."} 
+                  description={activeTab === 'greetings' ? "기초 인사 20선입니다." : activeTab === 'travel' ? "여행 50문장입니다." : "생활 50문장입니다."} 
                   color={activeTab === 'greetings' ? "#FF6B6B" : "#4ECDC4"}
                 />
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {(activeTab === 'greetings' ? greetingsData : activeTab === 'travel' ? travelData : dailyData).map((item, i) => (
-                  <SentenceCard key={i} index={i} item={item} onPlay={speakText} />
+                  <SentenceCard key={`${activeTab}-${i}`} index={i} item={item} onPlay={speakText} />
                 ))}
               </div>
             </motion.section>
@@ -366,8 +396,8 @@ export default function App() {
         </AnimatePresence>
       </main>
 
-      <footer className="text-center py-12 text-gray-300 text-xs font-medium tracking-wider">
-        © 2026 처음 만나는 일본어. 학습용 웹 브라우저 최적화 버전
+      <footer className="text-center py-8 text-gray-300 text-[10px] md:text-xs font-medium tracking-wider uppercase">
+        © 2026 처음 만나는 일본어. 실전 일본어 학습기
       </footer>
     </div>
   );
@@ -377,7 +407,7 @@ function TabButton({ active, onClick, label }: { active: boolean, onClick: () =>
   return (
     <button
       onClick={onClick}
-      className={`px-6 py-2 rounded-full font-bold transition-all text-base ${
+      className={`px-3 py-1.5 md:px-6 md:py-2 rounded-full font-bold transition-all text-xs md:text-base ${
         active 
           ? 'bg-white text-[#FF9B9B] shadow-sm' 
           : 'bg-transparent text-white hover:bg-white/10'
@@ -390,9 +420,9 @@ function TabButton({ active, onClick, label }: { active: boolean, onClick: () =>
 
 function SectionHeader({ title, description, color }: { title: string, description: string, color: string }) {
   return (
-    <div className="pb-2">
-      <h2 className="text-3xl font-black mb-1" style={{ color }}>{title}</h2>
-      <p className="text-gray-500 font-medium">{description}</p>
+    <div className="pb-1">
+      <h2 className="text-xl md:text-3xl font-black mb-1" style={{ color }}>{title}</h2>
+      <p className="text-gray-400 text-xs md:text-sm font-medium">{description}</p>
     </div>
   );
 }
@@ -409,20 +439,20 @@ const SentenceCard: FC<SentenceCardProps> = ({ item, index, onPlay }) => {
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.01 }}
-      className="flex items-center justify-between p-5 bg-[#F8F9FA] border-l-[10px] border-[#FF9B9B] rounded-2xl hover:bg-white hover:shadow-lg transition-all group"
+      className="flex items-center justify-between p-3 md:p-5 bg-[#F8F9FA] border-l-[6px] md:border-l-[10px] border-[#FF9B9B] rounded-xl md:rounded-2xl hover:bg-white hover:shadow-lg transition-all group"
     >
-      <div className="flex-1 pr-6">
+      <div className="flex-1 pr-3 md:pr-6 min-w-0">
         <div className="flex flex-col">
-          <span className="text-lg md:text-xl font-bold text-gray-800 leading-tight mb-1">{item.jp}</span>
-          <span className="text-xs text-gray-400 font-medium italic tracking-wide lowercase mb-1 leading-none">{item.ko}</span>
-          <span className="text-base font-black text-[#FF6B6B] mt-1">{item.mean}</span>
+          <span className="text-sm md:text-xl font-bold text-gray-800 leading-tight mb-0.5 truncate">{item.jp}</span>
+          <span className="text-[10px] md:text-xs text-gray-400 font-medium italic tracking-wide lowercase mb-1 leading-none">{item.ko}</span>
+          <span className="text-xs md:text-base font-black text-[#FF6B6B] leading-tight truncate">{item.mean}</span>
         </div>
       </div>
       <button 
         onClick={() => onPlay(item.jp)}
-        className="size-12 rounded-full bg-[#4ECDC4] text-white flex items-center justify-center shadow-lg hover:scale-110 active:scale-95 transition-all flex-shrink-0"
+        className="size-8 md:size-12 rounded-lg md:rounded-full bg-[#4ECDC4] text-white flex items-center justify-center shadow-md hover:scale-110 active:scale-95 transition-all flex-shrink-0"
       >
-        <Volume2 size={24} />
+        <Volume2 size={16} />
       </button>
     </motion.div>
   );
