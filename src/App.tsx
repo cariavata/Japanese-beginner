@@ -132,6 +132,7 @@ export default function App() {
   const [isReady, setIsReady] = useState(false);
   const voicesRef = useRef<SpeechSynthesisVoice[]>([]);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const ttsAudioRef = useRef<HTMLAudioElement | null>(null);
   const userManuallyPaused = useRef(false);
 
   useEffect(() => {
@@ -192,10 +193,17 @@ export default function App() {
 
   const speakText = useCallback((text: string) => {
     const playAudioFallback = (text: string) => {
-      const url = `https://translate.googleapis.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(text)}&tl=ja&client=tw-ob`;
-      const audio = new Audio(url);
+      if (!ttsAudioRef.current) return;
       
-      audio.onplay = () => {
+      const url = `https://translate.googleapis.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(text)}&tl=ja&client=tw-ob`;
+      
+      // Cancel previous playback
+      ttsAudioRef.current.pause();
+      ttsAudioRef.current.currentTime = 0;
+      
+      ttsAudioRef.current.src = url;
+      
+      ttsAudioRef.current.onplay = () => {
         if (audioRef.current) {
           audioRef.current.volume = 0.02;
         }
@@ -207,13 +215,13 @@ export default function App() {
         }
       };
       
-      audio.onended = restoreVolume;
-      audio.onerror = (e) => {
+      ttsAudioRef.current.onended = restoreVolume;
+      ttsAudioRef.current.onerror = (e) => {
         console.error("Fallback TTS Error:", e);
         restoreVolume();
       };
       
-      audio.play().catch(err => {
+      ttsAudioRef.current.play().catch(err => {
         console.error("Fallback audio blocked", err);
         restoreVolume();
       });
@@ -300,6 +308,8 @@ export default function App() {
         loop 
         preload="auto"
       />
+      {/* TTS Audio Fallback */}
+      <audio ref={ttsAudioRef} className="hidden" preload="none" />
 
       {/* Header */}
       <header className="bg-[#FF9B9B] text-white p-6 shadow-md border-b-4 border-[#FF6B6B]/10 relative overflow-hidden">
