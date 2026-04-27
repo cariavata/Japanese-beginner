@@ -16,21 +16,21 @@ interface CharItem {
 
 type CharData = (CharItem | null)[];
 
-const hiraganaData: CharData = [
+const INITIAL_HIRAGANA_DATA: CharData = [
   { jp: 'あ', ko: '아' }, { jp: 'い', ko: '이' }, { jp: 'う', ko: '우' }, { jp: 'え', ko: '에' }, { jp: 'お', ko: '오' },
   { jp: 'か', ko: '카' }, { jp: 'き', ko: '키' }, { jp: 'く', ko: '쿠' }, { jp: 'け', ko: '케' }, { jp: 'こ', ko: '코' },
   { jp: 'さ', ko: '사' }, { jp: 'し', ko: '시' }, { jp: 'す', ko: '스' }, { jp: 'せ', ko: '세' }, { jp: 'そ', ko: '소' },
   { jp: 'た', ko: '타' }, { jp: 'ち', ko: '치' }, { jp: 'つ', ko: '츠' }, { jp: 'て', ko: '테' }, { jp: 'と', ko: '토' },
   { jp: 'な', ko: '나' }, { jp: 'に', ko: '니' }, { jp: 'ぬ', ko: '누' }, { jp: 'ね', ko: '네' }, { jp: 'の', ko: '노' },
   { jp: 'は', ko: '하' }, { jp: 'ひ', ko: '히' }, { jp: 'ふ', ko: '후' }, { jp: 'へ', ko: '헤' }, { jp: 'ほ', ko: '호' },
-  { jp: 'ま', ko: '마' }, { jp: 'み', ko: '미' }, { jp: 'む', ko: '무' }, { jp: '메', ko: '메' }, { jp: 'も', ko: '모' },
+  { jp: 'ま', ko: '마' }, { jp: 'み', ko: '미' }, { jp: 'む', ko: '무' }, { jp: 'め', ko: '메' }, { jp: 'も', ko: '모' },
   { jp: 'や', ko: '야' }, null, { jp: 'ゆ', ko: '유' }, null, { jp: 'よ', ko: '요' },
   { jp: 'ら', ko: '라' }, { jp: 'り', ko: '리' }, { jp: 'る', ko: '루' }, { jp: 'れ', ko: '레' }, { jp: 'ろ', ko: '로' },
   { jp: 'わ', ko: '와' }, null, null, null, { jp: 'を', ko: '오(조사)' },
   { jp: 'ん', ko: '응' }, null, null, null, null
 ];
 
-const katakanaData: CharData = [
+const INITIAL_KATAKANA_DATA: CharData = [
   { jp: 'ア', ko: '아' }, { jp: 'イ', ko: '이' }, { jp: 'ウ', ko: '우' }, { jp: 'エ', ko: '에' }, { jp: 'オ', ko: '오' },
   { jp: 'カ', ko: '카' }, { jp: 'キ', ko: '키' }, { jp: 'ク', ko: '쿠' }, { jp: 'ケ', ko: '케' }, { jp: 'コ', ko: '코' },
   { jp: 'サ', ko: '사' }, { jp: 'シ', ko: '시' }, { jp: 'ス', ko: '스' }, { jp: 'セ', ko: '세' }, { jp: 'ソ', ko: '소' },
@@ -145,13 +145,26 @@ export default function App() {
     return saved ? JSON.parse(saved) : INITIAL_DAILY_DATA;
   });
   
+  const [hiraganaData, setHiraganaData] = useState<CharData>(() => {
+    const saved = localStorage.getItem('hiraganaData');
+    return saved ? JSON.parse(saved) : INITIAL_HIRAGANA_DATA;
+  });
+  
+  const [katakanaData, setKatakanaData] = useState<CharData>(() => {
+    const saved = localStorage.getItem('katakanaData');
+    return saved ? JSON.parse(saved) : INITIAL_KATAKANA_DATA;
+  });
+
   const [editingItem, setEditingItem] = useState<{tab: string, index: number, item: SentenceItem} | null>(null);
+  const [editingLetter, setEditingLetter] = useState<{type: 'hiragana' | 'katakana', index: number, item: CharItem} | null>(null);
   const [isAddingMode, setIsAddingMode] = useState(false);
   const [selectedItems, setSelectedItems] = useState<number[]>([]);
   
   useEffect(() => { localStorage.setItem('greetingsData', JSON.stringify(greetingsData)); }, [greetingsData]);
   useEffect(() => { localStorage.setItem('travelData', JSON.stringify(travelData)); }, [travelData]);
   useEffect(() => { localStorage.setItem('dailyData', JSON.stringify(dailyData)); }, [dailyData]);
+  useEffect(() => { localStorage.setItem('hiraganaData', JSON.stringify(hiraganaData)); }, [hiraganaData]);
+  useEffect(() => { localStorage.setItem('katakanaData', JSON.stringify(katakanaData)); }, [katakanaData]);
   useEffect(() => { setSelectedItems([]); }, [activeTab]);
 
   const [letterType, setLetterType] = useState<'hiragana' | 'katakana'>('hiragana');
@@ -447,14 +460,37 @@ export default function App() {
                       whileHover={{ y: -5, backgroundColor: '#FFE4E1' }}
                       whileTap={{ scale: 0.95 }}
                       onClick={() => speakText(item.jp)}
-                      className="bg-[#FFF0F5] border-2 border-[#FFE4E1] rounded-xl md:rounded-2xl p-3 md:p-6 text-center cursor-pointer transition-all flex flex-col items-center justify-center relative overflow-hidden"
+                      className="bg-[#FFF0F5] border-2 border-[#FFE4E1] rounded-xl md:rounded-2xl p-3 md:p-6 text-center cursor-pointer transition-all flex flex-col items-center justify-center relative overflow-hidden group"
                     >
+                      {isAdmin && (
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setEditingLetter({type: letterType, index: idx, item});
+                          }} 
+                          className="absolute top-1 right-1 p-1.5 md:p-2 rounded-lg bg-yellow-100 text-yellow-600 hover:bg-yellow-200 transition-colors z-10 shadow-sm"
+                        >
+                          <Pencil size={14} />
+                        </button>
+                      )}
                       <span className="text-2xl md:text-5xl font-black text-[#FF6B6B] mb-1 md:mb-2">{item.jp}</span>
                       <span className="text-[10px] md:text-sm font-bold text-gray-400 uppercase tracking-tight leading-none">{item.ko}</span>
                       <div className="mt-2 text-base md:text-xl opacity-30">🔊</div>
                     </motion.div>
                   ) : (
-                    <div key={`empty-${idx}`} className="h-16 md:h-28 border border-dashed border-gray-100 rounded-xl md:rounded-2xl opacity-50" />
+                    <div key={`empty-${idx}`} className="h-16 md:h-28 border border-dashed border-gray-100 rounded-xl md:rounded-2xl opacity-50 relative group">
+                      {isAdmin && (
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setEditingLetter({type: letterType, index: idx, item: { jp: '', ko: '' }});
+                          }} 
+                          className="absolute inset-0 m-auto w-8 h-8 flex items-center justify-center rounded-lg bg-green-100 text-green-600 hover:bg-green-200 transition-colors z-10 shadow-sm"
+                        >
+                          <Plus size={16} />
+                        </button>
+                      )}
+                    </div>
                   )
                 ))}
               </div>
@@ -477,7 +513,6 @@ export default function App() {
                   </span>
                   <SectionHeader 
                     title={activeTab === 'greetings' ? "필수 인사말" : activeTab === 'travel' ? "여행 필수 회화" : "실생활 표현"} 
-                    description={activeTab === 'greetings' ? "기초 인사 20선입니다." : activeTab === 'travel' ? "여행 50문장입니다." : "생활 50문장입니다."} 
                     color={activeTab === 'greetings' ? "#FF6B6B" : "#4ECDC4"}
                   />
                 </div>
@@ -560,6 +595,24 @@ export default function App() {
                 <input type="password" value={adminPwd} onChange={e=>setAdminPwd(e.target.value)} className="w-full bg-gray-50 border-2 border-gray-200 rounded-xl px-4 py-3 font-medium focus:border-[#FF9B9B] focus:outline-none transition-colors" placeholder="비밀번호 입력" onKeyDown={e => {if(e.key === 'Enter') handleAdminLogin()}}/>
               </div>
               <button onClick={handleAdminLogin} className="w-full bg-[#FF9B9B] text-white font-bold text-lg rounded-xl py-3 hover:bg-[#FF8080] transition-colors mt-2 shadow-md">로그인</button>
+            </div>
+          </motion.div>
+        </div>
+      )}
+
+      {/* Letter Edit Modal */}
+      {editingLetter && (
+        <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm overflow-y-auto">
+          <motion.div initial={{scale:0.9, opacity:0}} animate={{scale:1, opacity:1}} className="bg-white rounded-3xl p-6 md:p-8 max-w-sm w-full shadow-2xl relative my-8">
+            <button onClick={() => setEditingLetter(null)} className="absolute right-4 top-4 text-gray-400 hover:text-gray-800 transition-colors"><X size={24}/></button>
+            <h2 className="text-2xl font-black text-gray-800 mb-6">글자 수정</h2>
+            <div className="space-y-4">
+              <LetterFormContent 
+                editingLetter={editingLetter} 
+                close={() => setEditingLetter(null)} 
+                setHiraganaData={setHiraganaData} 
+                setKatakanaData={setKatakanaData}
+              />
             </div>
           </motion.div>
         </div>
@@ -650,15 +703,61 @@ function TabButton({ active, onClick, label }: { active: boolean, onClick: () =>
   );
 }
 
-function SectionHeader({ title, description, color }: { title: string, description: string, color: string }) {
+function SectionHeader({ title, color }: { title: string, color: string }) {
   return (
-    <div className="pb-1">
+    <div className="pb-1 group">
       <h2 className="text-xl md:text-3xl font-black mb-1" style={{ color }}>{title}</h2>
-      <p className="text-gray-400 text-xs md:text-sm font-medium">{description}</p>
     </div>
   );
 }
 
+
+function LetterFormContent({editingLetter, close, setHiraganaData, setKatakanaData}: any) {
+  const [jp, setJp] = useState(editingLetter.item?.jp || '');
+  const [ko, setKo] = useState(editingLetter.item?.ko || '');
+
+  const handleSave = () => {
+    const newItem = (jp && ko) ? { jp, ko } : null;
+    
+    const updateTarget = (prev: any[]) => {
+      const next = [...prev];
+      next[editingLetter.index] = newItem;
+      return next;
+    };
+
+    if(editingLetter.type === 'hiragana') setHiraganaData(updateTarget);
+    if(editingLetter.type === 'katakana') setKatakanaData(updateTarget);
+    close();
+  };
+
+  const handleRemove = () => {
+    const updateTarget = (prev: any[]) => {
+      const next = [...prev];
+      next[editingLetter.index] = null;
+      return next;
+    };
+    if(editingLetter.type === 'hiragana') setHiraganaData(updateTarget);
+    if(editingLetter.type === 'katakana') setKatakanaData(updateTarget);
+    close();
+  };
+
+  return (
+    <>
+      <div>
+        <label className="block text-xs font-bold text-gray-500 mb-1">일본어 글자</label>
+        <input type="text" value={jp} onChange={e=>setJp(e.target.value)} className="w-full bg-white border-2 border-gray-200 rounded-xl px-4 py-3 font-medium focus:border-[#FF9B9B] focus:outline-none transition-colors" placeholder="예: あ"/>
+      </div>
+      <div>
+        <label className="block text-xs font-bold text-gray-500 mb-1">한국어 발음</label>
+        <input type="text" value={ko} onChange={e=>setKo(e.target.value)} className="w-full bg-white border-2 border-gray-200 rounded-xl px-4 py-3 font-medium focus:border-[#FF9B9B] focus:outline-none transition-colors" placeholder="예: 아"/>
+      </div>
+      <div className="flex gap-2 mt-6">
+        <button onClick={handleRemove} className="flex-1 bg-red-100 text-red-600 font-bold text-sm md:text-base rounded-xl py-3 hover:bg-red-200 transition-colors shadow-md">빈칸으로 만들기</button>
+        <button onClick={handleSave} className="flex-1 bg-[#4ECDC4] text-white font-bold text-sm md:text-base rounded-xl py-3 hover:bg-[#45B7AF] transition-colors shadow-md">저장하기</button>
+      </div>
+    </>
+  );
+}
 
 interface SentenceCardProps {
   item: SentenceItem;
