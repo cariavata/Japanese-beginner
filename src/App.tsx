@@ -4,7 +4,7 @@
  */
 
 import { useState, useEffect, useCallback, useRef, FC } from 'react';
-import { Volume2, Plane, Home, MessageSquare, Info, Music, Music2 } from 'lucide-react';
+import { Volume2, Plane, Home, MessageSquare, Info, Music, Music2, Pencil, Trash2, Plus, X, Lock } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 // --- Data Section ---
@@ -50,7 +50,7 @@ interface SentenceItem {
   mean: string;
 }
 
-const greetingsData: SentenceItem[] = [
+const INITIAL_GREETINGS_DATA: SentenceItem[] = [
   { jp: 'おはようございます', ko: '오하요- 고자이마스', mean: '좋은 아침입니다 (아침 인사)' },
   { jp: 'こんにちは', ko: '콘니치와', mean: '안녕하세요 (낮 인사)' },
   { jp: 'こんばんは', ko: '콤방와', mean: '안녕하세요 (저녁 인사)' },
@@ -73,7 +73,7 @@ const greetingsData: SentenceItem[] = [
   { jp: 'おめでとうございます', ko: '오메데토- 고자이마스', mean: '축하합니다' }
 ];
 
-const travelData: SentenceItem[] = [
+const INITIAL_TRAVEL_DATA: SentenceItem[] = [
   { jp: '荷物はどこですか', ko: '니모츠와 도코데스카', mean: '수하물은 어디있나요?' },
   { jp: 'タクシー乗り場はどこですか', ko: '타쿠시- 노리바와 도코데스카', mean: '택시 승강장은 어디인가요?' },
   { jp: '東京駅まで行きますか', ko: '토-쿄-에키마데 이키마스카', mean: '도쿄역까지 가나요?' },
@@ -114,7 +114,7 @@ const travelData: SentenceItem[] = [
   { jp: 'クレジットカードは使えますか', ko: '쿠레짓토카-도와 츠카에마스카', mean: '신용카드 되나요?' }
 ];
 
-const dailyData: SentenceItem[] = [
+const INITIAL_DAILY_DATA: SentenceItem[] = [
   { jp: 'おはようございます', ko: '오하요- 고자이마스', mean: '좋은 아침입니다' },
   { jp: 'いただきます', ko: '이타다키마스', mean: '잘 먹겠습니다' },
   { jp: 'ごちそうさまでした', ko: '고치소-사마데시타', mean: '잘 먹었습니다' },
@@ -126,6 +126,32 @@ const dailyData: SentenceItem[] = [
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('letters');
+
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [showAdminLogin, setShowAdminLogin] = useState(false);
+  const [adminId, setAdminId] = useState('');
+  const [adminPwd, setAdminPwd] = useState('');
+  
+  const [greetingsData, setGreetingsData] = useState<SentenceItem[]>(() => {
+    const saved = localStorage.getItem('greetingsData');
+    return saved ? JSON.parse(saved) : INITIAL_GREETINGS_DATA;
+  });
+  const [travelData, setTravelData] = useState<SentenceItem[]>(() => {
+    const saved = localStorage.getItem('travelData');
+    return saved ? JSON.parse(saved) : INITIAL_TRAVEL_DATA;
+  });
+  const [dailyData, setDailyData] = useState<SentenceItem[]>(() => {
+    const saved = localStorage.getItem('dailyData');
+    return saved ? JSON.parse(saved) : INITIAL_DAILY_DATA;
+  });
+  
+  const [editingItem, setEditingItem] = useState<{tab: string, index: number, item: SentenceItem} | null>(null);
+  const [isAddingMode, setIsAddingMode] = useState(false);
+  
+  useEffect(() => { localStorage.setItem('greetingsData', JSON.stringify(greetingsData)); }, [greetingsData]);
+  useEffect(() => { localStorage.setItem('travelData', JSON.stringify(travelData)); }, [travelData]);
+  useEffect(() => { localStorage.setItem('dailyData', JSON.stringify(dailyData)); }, [dailyData]);
+
   const [letterType, setLetterType] = useState<'hiragana' | 'katakana'>('hiragana');
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [isBgmPlaying, setIsBgmPlaying] = useState(false);
@@ -295,6 +321,17 @@ export default function App() {
     }
   };
 
+  const handleAdminLogin = () => {
+    if (adminId === 'cariavata' && adminPwd === 'dudwls3098!!') {
+      setIsAdmin(true);
+      setShowAdminLogin(false);
+      setAdminId('');
+      setAdminPwd('');
+    } else {
+      alert('아이디 또는 비밀번호가 틀렸습니다.');
+    }
+  };
+
   if (!isReady) {
     return <div className="min-h-screen bg-[#FFF5F7] flex items-center justify-center font-bold text-rose-400">학습장 준비 중...</div>;
   }
@@ -319,7 +356,25 @@ export default function App() {
             <p className="text-pink-100 mt-2 text-base md:text-lg">왕초보를 위한 가장 쉽고 재미있는 일본어 놀이터</p>
           </div>
           
-          <div className="flex items-center gap-3">
+          
+            <div className="flex items-center gap-3">
+              {isAdmin ? (
+                 <button 
+                   onClick={() => setIsAdmin(false)}
+                   className="flex items-center gap-2 px-4 py-2 rounded-xl transition-all border-2 bg-yellow-400 text-yellow-900 border-yellow-500 font-bold hover:bg-yellow-300"
+                 >
+                   <span className="text-sm font-bold tracking-wider">관리자 종료</span>
+                 </button>
+              ) : (
+                 <button 
+                   onClick={() => setShowAdminLogin(true)}
+                   className="flex items-center gap-2 px-3 py-2 rounded-xl transition-all border-2 bg-white/20 text-white border-white/30 hover:bg-white/30"
+                 >
+                   <Lock size={16} />
+                   <span className="text-sm font-bold tracking-wider hidden md:inline">관리자</span>
+                 </button>
+              )}
+
             {/* BGM Toggle Button */}
             <button 
               onClick={toggleBgm}
@@ -330,10 +385,7 @@ export default function App() {
               <span className="text-sm font-bold uppercase tracking-wider">{isBgmPlaying ? 'BGM ON' : 'BGM OFF'}</span>
             </button>
 
-            <div className="hidden md:flex bg-white/20 p-3 rounded-2xl border border-white/30 text-center backdrop-blur-sm">
-              <span className="block text-xs uppercase font-bold tracking-widest text-white/80">오늘의 학습</span>
-              <span className="text-2xl font-black">20 / 120</span>
-            </div>
+            
           </div>
         </div>
       </header>
@@ -351,7 +403,7 @@ export default function App() {
         <div className="bg-[#FFF8E1] border border-[#FFECB3] p-4 rounded-2xl text-xs md:text-sm text-[#795548] mb-6 flex items-start md:items-center gap-3">
           <span className="text-xl md:text-2xl flex-shrink-0">💡</span>
           <p className="leading-snug">
-            <strong>Tip:</strong> 글자 칸을 클릭하면 발음을 들을 수 있습니다! 소리가 나지 않는다면 <b>볼륨</b>과 <b>무음 모드</b>를 확인해 주세요.
+            <strong>Tip:</strong> 글자 칸을 클릭하면 발음을 들을 수 있습니다! 소리가 나지 않는다면 <b>볼륨</b>과 <b>무음 모드</b>를 확인해 주세요.<br/>(모바일 네이버, 카카오톡 인앱 브라우저에서는 음성이 나오지 않을 수 있으니 크롬 및 엣지 브라우저에서 실행해 주시기 바랍니다.)
           </p>
         </div>
 
@@ -415,16 +467,26 @@ export default function App() {
               exit={{ opacity: 0 }}
               className="space-y-6"
             >
-              <div className="flex items-center gap-3 mb-4">
-                <span className="text-3xl">
-                  {activeTab === 'greetings' ? '💬' : activeTab === 'travel' ? '✈️' : '🏠'}
-                </span>
-                <SectionHeader 
-                  title={activeTab === 'greetings' ? "필수 인사말" : activeTab === 'travel' ? "여행 필수 회화" : "실생활 표현"} 
-                  description={activeTab === 'greetings' ? "기초 인사 20선입니다." : activeTab === 'travel' ? "여행 50문장입니다." : "생활 50문장입니다."} 
-                  color={activeTab === 'greetings' ? "#FF6B6B" : "#4ECDC4"}
-                />
+              
+              <div className="flex items-center justify-between gap-3 mb-4">
+                <div className="flex items-center gap-3">
+                  <span className="text-3xl">
+                    {activeTab === 'greetings' ? '💬' : activeTab === 'travel' ? '✈️' : '🏠'}
+                  </span>
+                  <SectionHeader 
+                    title={activeTab === 'greetings' ? "필수 인사말" : activeTab === 'travel' ? "여행 필수 회화" : "실생활 표현"} 
+                    description={activeTab === 'greetings' ? "기초 인사 20선입니다." : activeTab === 'travel' ? "여행 50문장입니다." : "생활 50문장입니다."} 
+                    color={activeTab === 'greetings' ? "#FF6B6B" : "#4ECDC4"}
+                  />
+                </div>
+                {isAdmin && (
+                  <button onClick={() => setIsAddingMode(true)} className="flex items-center gap-1 bg-[#4ECDC4] text-white px-3 py-1.5 md:px-4 md:py-2 rounded-xl hover:bg-[#45B7AF] transition-all font-bold shadow-md">
+                    <Plus size={16} />
+                    <span className="text-sm">추가</span>
+                  </button>
+                )}
               </div>
+
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {(activeTab === 'greetings' ? greetingsData : activeTab === 'travel' ? travelData : dailyData).map((item, i) => (
@@ -439,10 +501,98 @@ export default function App() {
       <footer className="text-center py-8 text-gray-300 text-[10px] md:text-xs font-medium tracking-wider uppercase">
         © 2026 처음 만나는 일본어. 실전 일본어 학습기
       </footer>
+
+      {/* Admin Login Modal */}
+      {showAdminLogin && (
+        <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm">
+          <motion.div initial={{scale:0.9, opacity:0}} animate={{scale:1, opacity:1}} className="bg-white rounded-3xl p-8 max-w-sm w-full shadow-2xl relative">
+            <button onClick={() => setShowAdminLogin(false)} className="absolute right-4 top-4 text-gray-400 hover:text-gray-800 transition-colors"><X size={24}/></button>
+            <h2 className="text-2xl font-black text-gray-800 mb-6 flex items-center gap-2"><Lock size={20}/> 관리자 로그인</h2>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-gray-500 mb-1">아이디</label>
+                <input type="text" value={adminId} onChange={e=>setAdminId(e.target.value)} className="w-full bg-gray-50 border-2 border-gray-200 rounded-xl px-4 py-3 font-medium focus:border-[#FF9B9B] focus:outline-none transition-colors" placeholder="아이디 입력"/>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-500 mb-1">비밀번호</label>
+                <input type="password" value={adminPwd} onChange={e=>setAdminPwd(e.target.value)} className="w-full bg-gray-50 border-2 border-gray-200 rounded-xl px-4 py-3 font-medium focus:border-[#FF9B9B] focus:outline-none transition-colors" placeholder="비밀번호 입력" onKeyDown={e => {if(e.key === 'Enter') handleAdminLogin()}}/>
+              </div>
+              <button onClick={handleAdminLogin} className="w-full bg-[#FF9B9B] text-white font-bold text-lg rounded-xl py-3 hover:bg-[#FF8080] transition-colors mt-2 shadow-md">로그인</button>
+            </div>
+          </motion.div>
+        </div>
+      )}
+
+      {/* Sentence Edit Modal */}
+      {(editingItem || isAddingMode) && (
+        <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm overflow-y-auto">
+          <motion.div initial={{scale:0.9, opacity:0}} animate={{scale:1, opacity:1}} className="bg-white rounded-3xl p-6 md:p-8 max-w-md w-full shadow-2xl relative my-8">
+            <button onClick={() => {setEditingItem(null); setIsAddingMode(false);}} className="absolute right-4 top-4 text-gray-400 hover:text-gray-800 transition-colors"><X size={24}/></button>
+            <h2 className="text-2xl font-black text-gray-800 mb-6">{isAddingMode ? '새 문장 추가' : '문장 수정'}</h2>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-gray-500 mb-1">분류</label>
+                {isAddingMode ? (
+                  <select disabled className="w-full bg-gray-50 border-2 border-gray-200 rounded-xl px-4 py-2 font-medium">
+                    <option value="">{activeTab === 'greetings' ? '인사말' : activeTab === 'travel' ? '여행' : '생활'}</option>
+                  </select>
+                ) : (
+                  <input type="text" value={editingItem?.tab === 'greetings' ? '인사말' : editingItem?.tab === 'travel' ? '여행' : '생활'} disabled className="w-full bg-gray-100 border-2 border-gray-200 rounded-xl px-4 py-2 font-medium text-gray-500"/>
+                )}
+              </div>
+              
+              <FormContent editingItem={editingItem} isAddingMode={isAddingMode} close={() => {setEditingItem(null); setIsAddingMode(false);}} activeTab={activeTab} setGreetingsData={setGreetingsData} setTravelData={setTravelData} setDailyData={setDailyData}/>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 }
 
+function FormContent({editingItem, isAddingMode, close, activeTab, setGreetingsData, setTravelData, setDailyData}: any) {
+  const [jp, setJp] = useState(editingItem ? editingItem?.item?.jp : '');
+  const [ko, setKo] = useState(editingItem ? editingItem?.item?.ko : '');
+  const [mean, setMean] = useState(editingItem ? editingItem?.item?.mean : '');
+
+  const handleSave = () => {
+    if(!jp || !ko || !mean) return alert('모든 칸을 입력해주세요.');
+    const newItem = { jp, ko, mean };
+    
+    const updateTarget = (prev: any[]) => {
+      if(isAddingMode) return [...prev, newItem];
+      const next = [...prev];
+      next[editingItem.index] = newItem;
+      return next;
+    };
+
+    const targetTab = isAddingMode ? activeTab : editingItem.tab;
+    if(targetTab === 'greetings') setGreetingsData(updateTarget);
+    if(targetTab === 'travel') setTravelData(updateTarget);
+    if(targetTab === 'daily') setDailyData(updateTarget);
+    close();
+  };
+
+  return (
+    <>
+      <div>
+        <label className="block text-xs font-bold text-gray-500 mb-1">일본어 (漢字/ひらがな)</label>
+        <input type="text" value={jp} onChange={e=>setJp(e.target.value)} className="w-full bg-white border-2 border-gray-200 rounded-xl px-4 py-3 font-medium focus:border-[#FF9B9B] focus:outline-none transition-colors" placeholder="예: こんにちは"/>
+      </div>
+      <div>
+        <label className="block text-xs font-bold text-gray-500 mb-1">한국어 발음</label>
+        <input type="text" value={ko} onChange={e=>setKo(e.target.value)} className="w-full bg-white border-2 border-gray-200 rounded-xl px-4 py-3 font-medium focus:border-[#FF9B9B] focus:outline-none transition-colors" placeholder="예: 콘니치와"/>
+      </div>
+      <div>
+        <label className="block text-xs font-bold text-gray-500 mb-1">뜻</label>
+        <input type="text" value={mean} onChange={e=>setMean(e.target.value)} className="w-full bg-white border-2 border-gray-200 rounded-xl px-4 py-3 font-medium focus:border-[#FF9B9B] focus:outline-none transition-colors" placeholder="예: 안녕하세요"/>
+      </div>
+      <button onClick={handleSave} className="w-full bg-[#4ECDC4] text-white font-bold text-lg rounded-xl py-3 hover:bg-[#45B7AF] transition-colors mt-6 shadow-md">{isAddingMode ? '추가하기' : '수정하기'}</button>
+    </>
+  );
+}
+
+// Ensure the handleAdminLogin is defined inside App component
 function TabButton({ active, onClick, label }: { active: boolean, onClick: () => void, label: string }) {
   return (
     <button
@@ -467,19 +617,25 @@ function SectionHeader({ title, description, color }: { title: string, descripti
   );
 }
 
+
 interface SentenceCardProps {
   item: SentenceItem;
   index: number;
   onPlay: (t: string) => void;
+  isAdmin?: boolean;
+  onEdit?: () => void;
+  onDelete?: () => void;
 }
 
-const SentenceCard: FC<SentenceCardProps> = ({ item, index, onPlay }) => {
+
+
+const SentenceCard: FC<SentenceCardProps> = ({ item, index, onPlay, isAdmin, onEdit, onDelete }) => {
   return (
     <motion.div 
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.01 }}
-      className="flex items-center justify-between p-3 md:p-5 bg-[#F8F9FA] border-l-[6px] md:border-l-[10px] border-[#FF9B9B] rounded-xl md:rounded-2xl hover:bg-white hover:shadow-lg transition-all group"
+      className="flex items-center justify-between p-3 md:p-5 bg-[#F8F9FA] border-l-[6px] md:border-l-[10px] border-[#FF9B9B] rounded-xl md:rounded-2xl hover:bg-white hover:shadow-lg transition-all group relative"
     >
       <div className="flex-1 pr-3 md:pr-6 min-w-0">
         <div className="flex flex-col">
@@ -488,12 +644,21 @@ const SentenceCard: FC<SentenceCardProps> = ({ item, index, onPlay }) => {
           <span className="text-xs md:text-base font-black text-[#FF6B6B] leading-tight truncate">{item.mean}</span>
         </div>
       </div>
-      <button 
-        onClick={() => onPlay(item.jp)}
-        className="size-8 md:size-12 rounded-lg md:rounded-full bg-[#4ECDC4] text-white flex items-center justify-center shadow-md hover:scale-110 active:scale-95 transition-all flex-shrink-0"
-      >
-        <Volume2 size={16} />
-      </button>
+      <div className="flex items-center gap-2">
+        {isAdmin && (
+          <div className="flex flex-col gap-1 mr-1">
+            <button onClick={onEdit} className="p-1.5 md:p-2 rounded-lg bg-yellow-100 text-yellow-600 hover:bg-yellow-200 transition-colors"><Pencil size={14}/></button>
+            <button onClick={onDelete} className="p-1.5 md:p-2 rounded-lg bg-red-100 text-red-600 hover:bg-red-200 transition-colors"><Trash2 size={14}/></button>
+          </div>
+        )}
+        <button 
+          onClick={() => onPlay(item.jp)}
+          className="size-8 md:size-12 rounded-lg md:rounded-full bg-[#4ECDC4] text-white flex items-center justify-center shadow-md hover:scale-110 active:scale-95 transition-all flex-shrink-0"
+        >
+          <Volume2 size={16} />
+        </button>
+      </div>
     </motion.div>
   );
 }
+
