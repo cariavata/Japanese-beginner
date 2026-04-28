@@ -7,7 +7,8 @@ async function startServer() {
   const app = express();
   const PORT = 3000;
 
-  app.use(express.json());
+  app.use(express.json({ limit: '50mb' }));
+  app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
   const seoDataPath = path.join(process.cwd(), 'seo-data.json');
 
@@ -29,6 +30,28 @@ async function startServer() {
   function setSeoData(data: any) {
     fs.writeFileSync(seoDataPath, JSON.stringify(data, null, 2));
   }
+
+  const appDataPath = path.join(process.cwd(), 'app-data.json');
+
+  function getAppData() {
+    if (fs.existsSync(appDataPath)) {
+      try { return JSON.parse(fs.readFileSync(appDataPath, 'utf8')); } catch(e) {}
+    }
+    return {};
+  }
+
+  function setAppData(data: any) {
+    fs.writeFileSync(appDataPath, JSON.stringify(data, null, 2));
+  }
+
+  app.get("/api/data", (req, res) => {
+    res.json(getAppData());
+  });
+
+  app.post("/api/data", (req, res) => {
+    setAppData(req.body);
+    res.json({ success: true });
+  });
 
   // API endpoints
   app.get("/api/seo", (req, res) => {

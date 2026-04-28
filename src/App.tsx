@@ -125,6 +125,26 @@ const INITIAL_DAILY_DATA: SentenceItem[] = [
   { jp: 'おかえりなさい', ko: '오카에리나사이', mean: '다녀오셨어요' }
 ];
 
+const fadeAudio = (audio: HTMLAudioElement, targetVolume: number, duration: number = 300) => {
+  let startVolume = audio.volume;
+  // If target is the same, do nothing
+  if (startVolume === targetVolume) return;
+  // Ensure we do not start fading if it is paused or 0 (unless we are fading in)
+  
+  const change = targetVolume - startVolume;
+  const startTime = performance.now();
+
+  const animate = (currentTime: number) => {
+    const elapsed = currentTime - startTime;
+    const progress = Math.min(elapsed / duration, 1);
+    audio.volume = Math.max(0, Math.min(1, startVolume + change * progress));
+    if (progress < 1) {
+      requestAnimationFrame(animate);
+    }
+  };
+  requestAnimationFrame(animate);
+};
+
 export default function App() {
   const [activeTab, setActiveTab] = useState('letters');
 
@@ -202,6 +222,63 @@ export default function App() {
   const [bgmPlaylist, setBgmPlaylist] = useState<string[]>([]);
   const [currentBgmIndex, setCurrentBgmIndex] = useState(0);
 
+  const [tabBoardLabel, setTabBoardLabel] = useState(() => localStorage.getItem('tabBoardLabel') || '📌 게시판');
+  
+  interface BoardPost { id: string; title: string; content: string; image?: string; createdAt: number; }
+  const [boardData, setBoardData] = useState<BoardPost[]>(() => {
+    const saved = localStorage.getItem('boardData');
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  const [dataLoaded, setDataLoaded] = useState(false);
+
+  useEffect(() => {
+    fetch('/api/data').then(res => res.json()).then(data => {
+      if (data && Object.keys(data).length > 0) {
+        if (data.siteTitle) setSiteTitle(data.siteTitle);
+        if (data.siteSubtitle) setSiteSubtitle(data.siteSubtitle);
+        if (data.tabLetterLabel) setTabLetterLabel(data.tabLetterLabel);
+        if (data.tabGreetingLabel) setTabGreetingLabel(data.tabGreetingLabel);
+        if (data.tabTravelLabel) setTabTravelLabel(data.tabTravelLabel);
+        if (data.tabDailyLabel) setTabDailyLabel(data.tabDailyLabel);
+        if (data.footerText) setFooterText(data.footerText);
+        if (data.naverMeta !== undefined) setNaverMeta(data.naverMeta);
+        if (data.popupInfo) setPopupInfo(data.popupInfo);
+        
+        if (data.greetingsData) setGreetingsData(data.greetingsData);
+        if (data.travelData) setTravelData(data.travelData);
+        if (data.dailyData) setDailyData(data.dailyData);
+        
+        if (data.hiraganaData) setHiraganaData(data.hiraganaData);
+        if (data.katakanaData) setKatakanaData(data.katakanaData);
+        
+        if (data.tabBoardLabel) setTabBoardLabel(data.tabBoardLabel);
+        if (data.boardData) setBoardData(data.boardData);
+      }
+      setDataLoaded(true);
+    }).catch(e => {
+       console.error("Failed to load app data", e);
+       setDataLoaded(true);
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!dataLoaded) return;
+    const timer = setTimeout(() => {
+      const data = {
+         siteTitle, siteSubtitle, tabLetterLabel, tabGreetingLabel, tabTravelLabel, tabDailyLabel,
+         footerText, popupInfo, greetingsData, travelData, dailyData, hiraganaData, katakanaData,
+         tabBoardLabel, boardData, naverMeta
+      };
+      fetch('/api/data', {
+         method: 'POST',
+         headers: { 'Content-Type': 'application/json' },
+         body: JSON.stringify(data)
+      }).catch(console.error);
+    }, 1500);
+    return () => clearTimeout(timer);
+  }, [siteTitle, siteSubtitle, tabLetterLabel, tabGreetingLabel, tabTravelLabel, tabDailyLabel, footerText, popupInfo, greetingsData, travelData, dailyData, hiraganaData, katakanaData, tabBoardLabel, boardData, naverMeta, dataLoaded]);
+
   // Load BGMs from DB
   useEffect(() => {
      const loadBgms = async () => {
@@ -220,14 +297,6 @@ export default function App() {
      };
      loadBgms();
   }, []);
-
-  const [tabBoardLabel, setTabBoardLabel] = useState(() => localStorage.getItem('tabBoardLabel') || '📌 게시판');
-  
-  interface BoardPost { id: string; title: string; content: string; image?: string; createdAt: number; }
-  const [boardData, setBoardData] = useState<BoardPost[]>(() => {
-    const saved = localStorage.getItem('boardData');
-    return saved ? JSON.parse(saved) : [];
-  });
 
   // Analytics Stats State
   const [statsPeriod, setStatsPeriod] = useState<'day'|'week'|'month'|'year'>('day');
@@ -379,13 +448,13 @@ export default function App() {
       
       ttsAudioRef.current.onplay = () => {
         if (audioRef.current) {
-          audioRef.current.volume = 0.02;
+          fadeAudio(audioRef.current, 0.02, 400);
         }
       };
       
       const restoreVolume = () => {
         if (audioRef.current) {
-          audioRef.current.volume = 0.05;
+          fadeAudio(audioRef.current, 0.05, 600);
         }
       };
       
@@ -426,13 +495,13 @@ export default function App() {
       
       utterance.onstart = () => {
         if (audioRef.current) {
-          audioRef.current.volume = 0.02;
+          fadeAudio(audioRef.current, 0.02, 400);
         }
       };
 
       const restoreVolume = () => {
         if (audioRef.current) {
-          audioRef.current.volume = 0.05;
+          fadeAudio(audioRef.current, 0.05, 600);
         }
       };
       
@@ -446,7 +515,7 @@ export default function App() {
     } catch (err) {
       console.error("TTS Error:", err);
       if (audioRef.current) {
-        audioRef.current.volume = 0.05;
+        fadeAudio(audioRef.current, 0.05, 600);
       }
     }
   }, []);
@@ -507,6 +576,7 @@ export default function App() {
          audioRef.current.src = bgmPlaylist[currentBgmIndex];
       }
       audioRef.current.play().then(() => {
+        if (audioRef.current) audioRef.current.volume = 0.05;
         userManuallyPaused.current = false;
         setIsBgmPlaying(true);
       }).catch(err => {
