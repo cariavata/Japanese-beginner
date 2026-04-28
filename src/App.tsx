@@ -4,10 +4,9 @@
  */
 
 import { useState, useEffect, useCallback, useRef, FC } from 'react';
-import { Volume2, Plane, Home, MessageSquare, Info, Music, Music2, Pencil, Trash2, Plus, X, Lock, Settings, BarChart2, Image } from 'lucide-react';
+import { INITIAL_GREETINGS_DATA, INITIAL_TRAVEL_DATA, INITIAL_DAILY_DATA } from './initialData';
+import { Volume2, Plane, Home, MessageSquare, Info, Music, Music2, Pencil, Trash2, Plus, X, Lock, Settings, BarChart2} from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
 import { saveAsset, getAsset, deleteAsset } from './lib/db';
 
 // --- Data Section ---
@@ -53,79 +52,11 @@ interface SentenceItem {
   mean: string;
 }
 
-const INITIAL_GREETINGS_DATA: SentenceItem[] = [
-  { jp: 'おはようございます', ko: '오하요- 고자이마스', mean: '좋은 아침입니다 (아침 인사)' },
-  { jp: 'こんにちは', ko: '콘니치와', mean: '안녕하세요 (낮 인사)' },
-  { jp: 'こんばんは', ko: '콤방와', mean: '안녕하세요 (저녁 인사)' },
-  { jp: 'はじめまして', ko: '하지메마시테', mean: '처음 뵙겠습니다' },
-  { jp: 'よろしくお願いします', ko: '요로시쿠 오네가이시마스', mean: '잘 부탁드립니다' },
-  { jp: 'ありがとうございます', ko: '아리가토- 고자이마스', mean: '감사합니다' },
-  { jp: 'どういたしまして', ko: '도-이타시마시테', mean: '천만에요' },
-  { jp: 'すみません', ko: '스미마센', mean: '죄송합니다 / 실례합니다' },
-  { jp: 'ごめんなさい', ko: '고멘나사이', mean: '미안합니다 (친근한 사과)' },
-  { jp: '申し訳ありません', ko: '모-시와케 아리마센', mean: '정말 죄송합니다 (정중한 사과)' },
-  { jp: 'さようなら', ko: '사요-나라', mean: '안녕히 가세요 (헤어질 때)' },
-  { jp: 'おやすみなさい', ko: '오야스미나사이', mean: '안녕히 주무세요' },
-  { jp: 'お久しぶりです', ko: '오히사시부리데스', mean: '오랜만입니다' },
-  { jp: 'お元気ですか', ko: '오겡키데스카', mean: '어떻게 지내세요? / 건강하신가요?' },
-  { jp: 'お疲れ様でした', ko: '오츠카레사마데시타', mean: '수고하셨습니다' },
-  { jp: 'お先に失礼します', ko: '오사키니 시츠레-시마스', mean: '먼저 실례하겠습니다 (먼저 퇴근할 때)' },
-  { jp: 'いらっしゃいませ', ko: '이랏샤이마세', mean: '어서 오세요 (가게 등에서 환영)' },
-  { jp: 'お待たせしました', ko: '오마타세시마시타', mean: '오래 기다리셨습니다' },
-  { jp: '気をつけてください', ko: '키오츠케테 쿠다사이', mean: '조심해서 가세요 / 조심하세요' },
-  { jp: 'おめでとうございます', ko: '오메데토- 고자이마스', mean: '축하합니다' }
-];
 
-const INITIAL_TRAVEL_DATA: SentenceItem[] = [
-  { jp: '荷物はどこですか', ko: '니모츠와 도코데스카', mean: '수하물은 어디있나요?' },
-  { jp: 'タクシー乗り場はどこですか', ko: '타쿠시- 노리바와 도코데스카', mean: '택시 승강장은 어디인가요?' },
-  { jp: '東京駅まで行きますか', ko: '토-쿄-에키마데 이키마스카', mean: '도쿄역까지 가나요?' },
-  { jp: '切符売り場はどこですか', ko: '킵푸 우리바와 도코데스카', mean: '매표소는 어디인가요?' },
-  { jp: 'ここへ行ってください', ko: '코코에 잇테 쿠다사이', mean: '여기로 가주세요' },
-  { jp: '次の駅はどこですか', ko: '츠기노 에키와 도코데스카', mean: '다음 역은 어디인가요?' },
-  { jp: '降りる駅を教えてください', ko: '오리루 에키오 오시에테 쿠다사이', mean: '내릴 역을 알려주세요' },
-  { jp: 'いくらですか', ko: '이쿠라데스카', mean: '얼마인가요?' },
-  { jp: 'バス停はどこですか', ko: '바스테-와 도코데스카', mean: '버스 정류장은 어디인가요?' },
-  { jp: '地下鉄はどこですか', ko: '치카테츠와 도코데스카', mean: '지하철은 어디인가요?' },
-  { jp: 'チェックインをお願いします', ko: '쳇쿠인오 오네가이시마스', mean: '체크인 부탁드립니다' },
-  { jp: 'チェックアウトをお願いします', ko: '쳇쿠아우토오 오네가이시마스', mean: '체크아웃 부탁드립니다' },
-  { jp: '予約したOOです', ko: '요야쿠시타 OO데스', mean: '예약한 OO입니다' },
-  { jp: '荷物を預かってもらえますか', ko: '니모츠오 아즈캇테 모라에마스카', mean: '짐을 맡겨주실 수 있나요?' },
-  { jp: 'Wi-Fiのパスワードは何ですか', ko: '와이파이노 파스와-도와 난데스카', mean: '와이파이 비밀번호가 무엇인가요?' },
-  { jp: '朝食は何時からですか', ko: '초-쇼쿠와 난지카라데스카', mean: '조식은 몇시부터인가요?' },
-  { jp: '部屋を掃除してください', ko: '헤야오 소-지시테 쿠다사이', mean: '방을 청소해 주세요' },
-  { jp: 'タオルをもう一枚ください', ko: '타오루오 모- 이치마이 쿠다사이', mean: '수건 한 장 더 주세요' },
-  { jp: 'お湯が出ません', ko: '오유가 데마센', mean: '따뜻한 물이 안 나옵니다' },
-  { jp: '部屋を変えてもらえますか', ko: '헤야오 카에테 모라에마스카', mean: '방을 바꿔주실 수 있나요?' },
-  { jp: '何名様ですか', ko: '난메-사마데스카', mean: '몇 분이신가요? (점원)' },
-  { jp: '2人です', ko: '후타리데스', mean: '두 명입니다' },
-  { jp: 'メニューをください', ko: '메뉴-오 쿠다사이', mean: '메뉴판 주세요' },
-  { jp: '日本語のメニューはありますか', ko: '니홍고노 메뉴-와 아리마스카', mean: '일본어 메뉴판 있나요?' },
-  { jp: 'おすすめは何ですか', ko: '오스스메와 난데스카', mean: '추천 메뉴는 무엇인가요?' },
-  { jp: 'これをお願いします', ko: '코레오 오네가이시마스', mean: '이걸로 부탁합니다' },
-  { jp: 'お水をもらえますか', ko: '오미즈오 모라에마스카', mean: '물 좀 주시겠어요?' },
-  { jp: '辛くしないでください', ko: '카라쿠 시나이데 쿠다사이', mean: '맵지 않게 해주세요' },
-  { jp: 'お会計をお願いします', ko: '오카이케-오 오네가이시마스', mean: '계산 부탁드립니다' },
-  { jp: '別々に払えますか', ko: '베츠베츠니 하라에마스카', mean: '따로따로 계산되나요?' },
-  { jp: '美味しかったです', ko: '오이시캇타데스', mean: '맛있었습니다' },
-  { jp: 'これを見せてください', ko: '코레오 미세테 쿠다사이', mean: '이것 좀 보여주세요' },
-  { jp: '試着してもいいですか', ko: '시챠쿠시테모 이-데스카', mean: '입어봐도 되나요?' },
-  { jp: 'もう少し大きいサイズはありますか', ko: '모- 스코시 오-키- 사이즈와 아리마스카', mean: '조금 더 큰 사이즈 있나요?' },
-  { jp: 'もう少し小さいサイズはありますか', ko: '모- 스코시 치-사이 사이즈와 아리마스카', mean: '조금 더 작은 사이즈 있나요?' },
-  { jp: '別の色はありますか', ko: '베츠노 이로와 아리마스카', mean: '다른 색상 있나요?' },
-  { jp: 'これをください', ko: '코레오 쿠다사이', mean: '이걸로 주세요' },
-  { jp: 'クレジットカードは使えますか', ko: '쿠레짓토카-도와 츠카에마스카', mean: '신용카드 되나요?' }
-];
 
-const INITIAL_DAILY_DATA: SentenceItem[] = [
-  { jp: 'おはようございます', ko: '오하요- 고자이마스', mean: '좋은 아침입니다' },
-  { jp: 'いただきます', ko: '이타다키마스', mean: '잘 먹겠습니다' },
-  { jp: 'ごちそうさまでした', ko: '고치소-사마데시타', mean: '잘 먹었습니다' },
-  { jp: 'いってきます', ko: '잇테키마스', mean: '다녀오겠습니다' },
-  { jp: 'いってらっしゃい', ko: '잇테랏샤이', mean: '다녀오세요' },
-  { jp: 'ただいま', ko: '타다이마', mean: '다녀왔습니다' },
-  { jp: 'おかえりなさい', ko: '오카에리나사이', mean: '다녀오셨어요' }
-];
+
+
+
 
 const fadeAudio = (audio: HTMLAudioElement, targetVolume: number, duration: number = 300) => {
   let startVolume = audio.volume;
@@ -181,8 +112,7 @@ export default function App() {
   const [editingItem, setEditingItem] = useState<{tab: string, index: number, item: SentenceItem} | null>(null);
   const [editingLetter, setEditingLetter] = useState<{type: 'hiragana' | 'katakana', index: number, item: CharItem} | null>(null);
   const [isAddingMode, setIsAddingMode] = useState(false);
-  const [isAddingBoard, setIsAddingBoard] = useState(false);
-  const [selectedItems, setSelectedItems] = useState<number[]>([]);
+    const [selectedItems, setSelectedItems] = useState<number[]>([]);
   
   const [siteTitle, setSiteTitle] = useState(() => localStorage.getItem('siteTitle') || '처음 만나는 일본어 🌸');
   const [siteSubtitle, setSiteSubtitle] = useState(() => localStorage.getItem('siteSubtitle') || '왕초보를 위한 가장 쉽고 재미있는 일본어 놀이터');
@@ -192,14 +122,15 @@ export default function App() {
   const [tabDailyLabel, setTabDailyLabel] = useState(() => localStorage.getItem('tabDailyLabel') || '🏠 생활 표현');
   const [footerText, setFooterText] = useState(() => localStorage.getItem('footerText') || '© 2026 처음 만나는 일본어. 실전 일본어 학습기');
   const [naverMeta, setNaverMeta] = useState(() => localStorage.getItem('naverMeta') || '');
-  const [seoData, setSeoData] = useState({ robotsTxt: '', sitemapXml: '', rssXml: '' });
+  const [seoData, setSeoData] = useState({ robotsTxt: '', sitemapXml: '', rssXml: '', adsTxt: '' });
 
   useEffect(() => {
     fetch('/api/seo').then(res => res.json()).then(data => {
       setSeoData({
         robotsTxt: data.robotsTxt || 'User-agent: *\nAllow: /',
         sitemapXml: data.sitemapXml || '',
-        rssXml: data.rssXml || ''
+        rssXml: data.rssXml || '',
+        adsTxt: data.adsTxt || ''
       });
     }).catch(console.error);
   }, []);
@@ -221,17 +152,10 @@ export default function App() {
     return saved ? JSON.parse(saved) : { active: false, content: '새로운 공지사항입니다.', image: '' };
   });
 
-  const [bgmPlaylist, setBgmPlaylist] = useState<string[]>([]);
-  const [currentBgmIndex, setCurrentBgmIndex] = useState(0);
+  const [bgmUrl, setBgmUrl] = useState(() => localStorage.getItem('bgmUrl') || 'https://archive.org/download/beautiful-japanese-music-koto-music-shakuhachi-music/beautiful-japanese-music-koto-music-shakuhachi-music.mp3');
+  useEffect(() => { localStorage.setItem('bgmUrl', bgmUrl); }, [bgmUrl]);
 
-  const [tabBoardLabel, setTabBoardLabel] = useState(() => localStorage.getItem('tabBoardLabel') || '📌 게시판');
-  
-  interface BoardPost { id: string; title: string; content: string; image?: string; createdAt: number; }
-  const [boardData, setBoardData] = useState<BoardPost[]>(() => {
-    const saved = localStorage.getItem('boardData');
-    return saved ? JSON.parse(saved) : [];
-  });
-
+    
   const [dataLoaded, setDataLoaded] = useState(false);
 
   useEffect(() => {
@@ -245,6 +169,7 @@ export default function App() {
         if (data.tabDailyLabel) setTabDailyLabel(data.tabDailyLabel);
         if (data.footerText) setFooterText(data.footerText);
         if (data.naverMeta !== undefined) setNaverMeta(data.naverMeta);
+        if (data.bgmUrl !== undefined) setBgmUrl(data.bgmUrl);
         if (data.popupInfo) setPopupInfo(data.popupInfo);
         
         if (data.greetingsData) setGreetingsData(data.greetingsData);
@@ -254,9 +179,7 @@ export default function App() {
         if (data.hiraganaData) setHiraganaData(data.hiraganaData);
         if (data.katakanaData) setKatakanaData(data.katakanaData);
         
-        if (data.tabBoardLabel) setTabBoardLabel(data.tabBoardLabel);
-        if (data.boardData) setBoardData(data.boardData);
-      }
+                      }
       setDataLoaded(true);
     }).catch(e => {
        console.error("Failed to load app data", e);
@@ -270,7 +193,7 @@ export default function App() {
       const data = {
          siteTitle, siteSubtitle, tabLetterLabel, tabGreetingLabel, tabTravelLabel, tabDailyLabel,
          footerText, popupInfo, greetingsData, travelData, dailyData, hiraganaData, katakanaData,
-         tabBoardLabel, boardData, naverMeta
+         naverMeta, bgmUrl
       };
       fetch('/api/data', {
          method: 'POST',
@@ -279,30 +202,22 @@ export default function App() {
       }).catch(console.error);
     }, 1500);
     return () => clearTimeout(timer);
-  }, [siteTitle, siteSubtitle, tabLetterLabel, tabGreetingLabel, tabTravelLabel, tabDailyLabel, footerText, popupInfo, greetingsData, travelData, dailyData, hiraganaData, katakanaData, tabBoardLabel, boardData, naverMeta, dataLoaded]);
+  }, [siteTitle, siteSubtitle, tabLetterLabel, tabGreetingLabel, tabTravelLabel, tabDailyLabel, footerText, popupInfo, greetingsData, travelData, dailyData, hiraganaData, katakanaData, bgmUrl, naverMeta, dataLoaded]);
 
-  // Load BGMs from DB
-  useEffect(() => {
-     const loadBgms = async () => {
-         const list = [];
-         for(let i=0; i<5; i++){
-             try {
-                const data = await getAsset(`bgm_${i}`);
-                if (data) list.push(data);
-             } catch(e){}
-         }
-         if (list.length > 0) {
-            setBgmPlaylist(list);
-         } else {
-            setBgmPlaylist(['https://archive.org/download/beautiful-japanese-music-koto-music-shakuhachi-music/beautiful-japanese-music-koto-music-shakuhachi-music.mp3']);
-         }
-     };
-     loadBgms();
-  }, []);
-
+  
   // Analytics Stats State
   const [statsPeriod, setStatsPeriod] = useState<'day'|'week'|'month'|'year'>('day');
   const [siteStats, setSiteStats] = useState<any>({});
+
+  // AdSense push
+  useEffect(() => {
+    try {
+      ((window as any).adsbygoogle = (window as any).adsbygoogle || []).push({});
+    } catch (e: any) {
+      if (e?.message?.includes("already have ads")) return;
+      console.error("AdSense error:", e);
+    }
+  }, []);
 
   // Fetch / Init Stats
   useEffect(() => {
@@ -349,9 +264,7 @@ export default function App() {
     }
   }, [naverMeta]);
 
-  useEffect(() => { localStorage.setItem('tabBoardLabel', tabBoardLabel); }, [tabBoardLabel]);
-  useEffect(() => { localStorage.setItem('boardData', JSON.stringify(boardData)); }, [boardData]);
-
+    
   const [showAdminDashboard, setShowAdminDashboard] = useState(false);
   const [closedPopup, setClosedPopup] = useState(false);
 
@@ -522,48 +435,9 @@ export default function App() {
     }
   }, []);
 
-  const performBgmChange = useCallback((nextIndex: number) => {
-    const audio = audioRef.current;
-    if (!audio) return;
-    
-    // fade out
-    let vol = audio.volume;
-    const fadeOutInterval = setInterval(() => {
-      vol -= 0.01;
-      if (vol <= 0) {
-        clearInterval(fadeOutInterval);
-        audio.pause();
-        audio.volume = 0;
-        setCurrentBgmIndex(nextIndex);
-        setTimeout(() => {
-          if (bgmPlaylist[nextIndex]) {
-            audio.src = bgmPlaylist[nextIndex];
-            if (isBgmPlaying) {
-              audio.play().then(() => {
-                // fade in
-                let volIn = 0;
-                const fadeInInterval = setInterval(() => {
-                  volIn += 0.01;
-                  if (volIn >= 0.05) {
-                    volIn = 0.05;
-                    clearInterval(fadeInInterval);
-                  }
-                  audio.volume = volIn;
-                }, 100);
-              }).catch(err => console.error("BGM Autoplay/Fadein blocked:", err));
-            }
-          }
-        }, 100);
-      } else {
-        audio.volume = Math.max(0, vol);
-      }
-    }, 100);
-  }, [bgmPlaylist, isBgmPlaying]);
+  
 
-  const handleNextBgm = useCallback(() => {
-    if (bgmPlaylist.length === 0) return;
-    performBgmChange(Math.floor(Math.random() * bgmPlaylist.length));
-  }, [bgmPlaylist, performBgmChange]);
+  
 
   const toggleBgm = () => {
     if (!audioRef.current) return;
@@ -574,8 +448,8 @@ export default function App() {
       setIsBgmPlaying(false);
     } else {
       // Ensure source is loaded
-      if (!audioRef.current.src && bgmPlaylist.length > 0) {
-         audioRef.current.src = bgmPlaylist[currentBgmIndex];
+      if (!audioRef.current.src && bgmUrl) {
+         audioRef.current.src = bgmUrl;
       }
       audioRef.current.play().then(() => {
         if (audioRef.current) audioRef.current.volume = 0.05;
@@ -606,12 +480,7 @@ export default function App() {
   return (
     <div className="min-h-screen bg-[#FFF5F7] text-[#333] font-sans selection:bg-rose-200">
       {/* Background Music Element */}
-      <audio 
-        ref={audioRef} 
-        src={bgmPlaylist[currentBgmIndex] || undefined} 
-        onEnded={handleNextBgm}
-        preload="auto"
-      />
+      <audio ref={audioRef} src={bgmUrl} loop preload="auto" />
       {/* TTS Audio Fallback */}
       <audio ref={ttsAudioRef} className="hidden" preload="none" />
 
@@ -685,8 +554,7 @@ export default function App() {
         <TabButton active={activeTab === 'greetings'} onClick={() => setActiveTab('greetings')} label={tabGreetingLabel} />
         <TabButton active={activeTab === 'travel'} onClick={() => setActiveTab('travel')} label={tabTravelLabel} />
         <TabButton active={activeTab === 'daily'} onClick={() => setActiveTab('daily')} label={tabDailyLabel} />
-        <TabButton active={activeTab === 'board'} onClick={() => setActiveTab('board')} label={tabBoardLabel} />
-      </nav>
+              </nav>
 
       {/* Main Content */}
       <main className="max-w-5xl mx-auto my-6 p-4 md:p-8 bg-white rounded-[2rem] md:rounded-[2.5rem] shadow-2xl border-4 border-[#FFE4E1] mx-4 md:mx-auto">
@@ -847,63 +715,19 @@ export default function App() {
               </div>
             </motion.section>
           )}
-          {activeTab === 'board' && (
-            <motion.section
-              key="board"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="space-y-6"
-            >
-              <div className="flex items-center justify-between gap-3 mb-4">
-                <div className="flex items-center gap-3">
-                  <span className="text-3xl">📌</span>
-                  <SectionHeader title={tabBoardLabel} color="#FFA07A" />
-                </div>
-                {isAdmin && (
-                  <button onClick={() => setIsAddingBoard(true)} className="flex items-center gap-1 bg-[#4ECDC4] text-white px-3 py-1.5 md:px-4 md:py-2 rounded-xl hover:bg-[#45B7AF] transition-all font-bold shadow-md">
-                    <Plus size={16} />
-                    <span className="text-sm">글쓰기</span>
-                  </button>
-                )}
-              </div>
-              <div className="space-y-4">
-                {boardData.length === 0 ? (
-                  <div className="text-center py-10 text-gray-400 font-medium bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200">등록된 게시물이 없습니다.</div>
-                ) : (
-                   boardData.map((post) => (
-                      <div key={post.id} className="bg-white border-2 border-[#FFDAB9] rounded-2xl p-5 shadow-sm hover:shadow-md transition-all">
-                        <div className="flex justify-between items-start mb-3">
-                           <h3 className="text-lg md:text-xl font-bold text-gray-800">{post.title}</h3>
-                           {isAdmin && (
-                              <button onClick={() => {
-                                 if(window.confirm('정말 삭제하시겠습니까?')) {
-                                     setBoardData(prev => prev.filter(p => p.id !== post.id));
-                                 }
-                              }} className="text-red-400 hover:text-red-600 p-1 bg-red-50 rounded-md">
-                                <Trash2 size={16} />
-                              </button>
-                           )}
-                        </div>
-                        {post.image && (
-                          <div className="mb-4 rounded-xl overflow-hidden border border-gray-100">
-                            <img src={post.image} alt={post.title} className="max-w-full h-auto object-contain max-h-96" />
-                          </div>
-                        )}
-                        <div className="prose prose-sm md:prose-base max-w-none prose-img:rounded-xl prose-img:border prose-img:border-gray-100 markdown-body">
-                          <ReactMarkdown remarkPlugins={[remarkGfm]}>{post.content}</ReactMarkdown>
-                        </div>
-                        <div className="text-xs text-gray-400 mt-4 text-right">
-                           {new Date(post.createdAt).toLocaleString()}
-                        </div>
-                      </div>
-                   ))
-                )}
-              </div>
-            </motion.section>
-          )}
+          
         </AnimatePresence>
       </main>
+
+      <div className="w-full max-w-4xl mx-auto mt-8 mb-4 px-4">
+        {/* Google AdSense */}
+        <ins className="adsbygoogle"
+             style={{ display: 'block', minHeight: '90px' }}
+             data-ad-client="ca-pub-6799823492487492"
+             data-ad-slot=""
+             data-ad-format="auto"
+             data-full-width-responsive="true"></ins>
+      </div>
 
       <footer className="text-center py-8 text-gray-400 text-[10px] md:text-xs font-medium tracking-wider">
         {footerText}
@@ -956,6 +780,11 @@ export default function App() {
                         <label className="block text-xs font-bold text-gray-500 mb-1">robots.txt (검색 로봇 제어)</label>
                         <textarea value={seoData.robotsTxt} onChange={e=>setSeoData({...seoData, robotsTxt: e.target.value})} className="w-full bg-gray-50 border-2 border-gray-200 rounded-xl px-3 py-2 text-sm font-medium focus:border-purple-400 focus:outline-none h-24 font-mono text-xs" placeholder="User-agent: *&#10;Allow: /"/>
                         <p className="flex justify-between items-center text-[10px] text-gray-400 mt-1"><span>네이버 서치어드바이저 &gt; 검증 &gt; robots.txt 에서 확인 가능</span><a href="/robots.txt" target="_blank" className="text-purple-500 hover:underline">/robots.txt 열기</a></p>
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-gray-500 mb-1">ads.txt (구글 애드센스 등)</label>
+                        <textarea value={seoData.adsTxt || ''} onChange={e=>setSeoData({...seoData, adsTxt: e.target.value})} className="w-full bg-gray-50 border-2 border-gray-200 rounded-xl px-3 py-2 text-sm font-medium focus:border-purple-400 focus:outline-none h-24 font-mono text-xs" placeholder="google.com, pub-0000000000000000, DIRECT, f08c47fec0942fa0"/>
+                        <p className="flex justify-between items-center text-[10px] text-gray-400 mt-1"><span>애드센스 승인을 위해 ads.txt 내용을 붙여넣으세요.</span><a href="/ads.txt" target="_blank" className="text-purple-500 hover:underline">/ads.txt 열기</a></p>
                       </div>
                       <div>
                         <label className="block text-xs font-bold text-gray-500 mb-1">사이트맵 (sitemap.xml)</label>
@@ -1021,150 +850,18 @@ export default function App() {
                         <label className="block text-xs font-bold text-gray-500 mb-1">메뉴 4</label>
                         <input type="text" value={tabDailyLabel} onChange={e=>setTabDailyLabel(e.target.value)} className="w-full bg-gray-50 border-2 border-gray-200 rounded-xl px-3 py-2 text-sm font-medium focus:border-blue-400 focus:outline-none"/>
                       </div>
-                      <div className="col-span-2">
-                        <label className="block text-xs font-bold text-gray-500 mb-1">게시판 메뉴</label>
-                        <input type="text" value={tabBoardLabel} onChange={e=>setTabBoardLabel(e.target.value)} className="w-full bg-gray-50 border-2 border-gray-200 rounded-xl px-3 py-2 text-sm font-medium focus:border-blue-400 focus:outline-none"/>
-                      </div>
+                      
                     </div>
                   </div>
 
                   <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
-                    <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2"><Music size={18} className="text-purple-400"/> 배경음악 (BGM) 설정 (5개까지)</h3>
+                    <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2"><Music size={18} className="text-purple-400"/> 배경음악 (BGM) 설정</h3>
                     <div className="space-y-4">
-                      {[0, 1, 2, 3, 4].map((idx) => (
-                        <div key={idx}>
-                          <label className="block text-xs font-bold text-gray-500 mb-1">BGM {idx + 1}</label>
-                          <input type="file" accept="audio/*" onChange={e => {
-                            const file = e.target.files?.[0];
-                            if (file) {
-                              if (file.size > 5 * 1024 * 1024) { alert('BGM 오디오 파일은 5MB 이내로 첨부 가능합니다.'); return; }
-                              const reader = new FileReader();
-                              reader.onload = async (ev) => {
-                                const dataUrl = ev.target?.result as string;
-                                await saveAsset(`bgm_${idx}`, dataUrl);
-                                const newPlaylist = [...bgmPlaylist];
-                                newPlaylist[idx] = dataUrl;
-                                setBgmPlaylist(newPlaylist.filter(v => typeof v === 'string' && v !== ''));
-                              };
-                              reader.readAsDataURL(file);
-                            }
-                          }} className="w-full bg-gray-50 border-2 border-gray-200 rounded-xl px-3 py-2 text-sm font-medium focus:border-purple-400 focus:outline-none"/>
-                          {bgmPlaylist[idx] && (
-                            <div className="mt-1 flex items-center justify-between bg-green-50 px-3 py-1.5 rounded-lg border border-green-100">
-                               <p className="text-[11px] text-green-600 font-bold">오디오 등록됨</p>
-                               <button onClick={async () => {
-                                  await deleteAsset(`bgm_${idx}`);
-                                  const newPlaylist = [...bgmPlaylist];
-                                  newPlaylist.splice(idx, 1);
-                                  setBgmPlaylist(newPlaylist.filter(v => typeof v === 'string' && v !== ''));
-                               }} className="text-red-500 hover:text-red-700 text-xs font-bold px-2 py-0.5 rounded-full hover:bg-red-50">삭제</button>
-                            </div>
-                          )}
+                        <div>
+                          <label className="block text-xs font-bold text-gray-500 mb-1">BGM URL (무료 음악 호스팅 링크)</label>
+                          <input type="text" value={bgmUrl} onChange={e => setBgmUrl(e.target.value)} className="w-full bg-gray-50 border-2 border-gray-200 rounded-xl px-3 py-2 text-sm font-medium focus:border-purple-400 focus:outline-none" placeholder="https://...mp3"/>
                         </div>
-                      ))}
                     </div>
-                  </div>
-                </div>
-
-                {/* Right Col: Stats */}
-                <div className="space-y-6">
-                  <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 h-full">
-                    <div className="flex items-center justify-between mb-4 pb-2 border-b">
-                      <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2"><BarChart2 size={18} className="text-orange-400"/> 접속 통계</h3>
-                      <select value={statsPeriod} onChange={e => setStatsPeriod(e.target.value as any)} className="bg-gray-50 border border-gray-200 text-sm rounded-lg px-2 py-1 font-medium text-gray-600 focus:outline-none focus:border-orange-400">
-                        <option value="day">오늘 (일간)</option>
-                        <option value="week">최근 7일 (주간)</option>
-                        <option value="month">최근 30일 (월간)</option>
-                        <option value="year">올해 (연간)</option>
-                      </select>
-                    </div>
-                    
-                    {(() => {
-                        const today = new Date();
-                        const startDate = new Date();
-                        if (statsPeriod === 'week') startDate.setDate(today.getDate() - 7);
-                        else if (statsPeriod === 'month') startDate.setDate(today.getDate() - 30);
-                        else if (statsPeriod === 'year') startDate.setFullYear(today.getFullYear(), 0, 1);
-                        else startDate.setHours(0,0,0,0); // day
-                        
-                        let totalVisitors = 0;
-                        let periodVisitors = 0;
-                        let referrers: Record<string, number> = {};
-                        let keywords: Record<string, number> = {};
-
-                        Object.keys(siteStats).forEach(dateStr => {
-                           const d = new Date(dateStr);
-                           const stat = siteStats[dateStr];
-                           totalVisitors += stat.visitors;
-                           
-                           if (d >= startDate) {
-                              periodVisitors += stat.visitors;
-                              Object.keys(stat.referrers || {}).forEach(k => referrers[k] = (referrers[k] || 0) + stat.referrers[k]);
-                              Object.keys(stat.keywords || {}).forEach(k => keywords[k] = (keywords[k] || 0) + stat.keywords[k]);
-                           }
-                        });
-
-                        const sortedReferrers = Object.entries(referrers).sort((a,b) => b[1]-a[1]);
-                        const totalReferrers = sortedReferrers.reduce((s, c) => s + c[1], 0) || 1; 
-
-                        const sortedKeywords = Object.entries(keywords).sort((a,b) => b[1]-a[1]).slice(0, 20);
-
-                        const colorMap: Record<string, string> = { '네이버': '#03C75A', '구글': '#4285F4', '다음/카카오': '#FAE100', '기초/기타': '#9CA3AF' };
-
-                        return (
-                          <div className="space-y-6">
-                             <div className="grid grid-cols-2 gap-4">
-                               <div className="bg-orange-50 rounded-2xl p-4 border border-orange-100 flex flex-col items-center justify-center text-center">
-                                 <span className="text-xs font-bold text-orange-600 mb-1">{statsPeriod === 'day' ? '오늘' : statsPeriod === 'week' ? '주간' : statsPeriod === 'month' ? '월간' : '연간'} 방문자</span>
-                                 <span className="text-2xl md:text-3xl font-black text-orange-500">{periodVisitors.toLocaleString()}</span>
-                               </div>
-                               <div className="bg-blue-50 rounded-2xl p-4 border border-blue-100 flex flex-col items-center justify-center text-center">
-                                 <span className="text-xs font-bold text-blue-600 mb-1">총 누적 방문자</span>
-                                 <span className="text-2xl md:text-3xl font-black text-blue-500">{totalVisitors.toLocaleString()}</span>
-                               </div>
-                             </div>
-
-                             <div>
-                               <h4 className="text-sm font-bold text-gray-700 mb-3 border-b pb-2">포털별 유입 현황 (해당 기간)</h4>
-                               <div className="space-y-2">
-                                 {sortedReferrers.length === 0 ? <p className="text-xs text-gray-400">데이터가 없습니다.</p> : sortedReferrers.map(([key, count]) => {
-                                     const percent = Math.round((count / totalReferrers) * 100);
-                                     const color = colorMap[key] || '#9CA3AF';
-                                     return (
-                                        <div key={key} className="flex items-center justify-between text-xs md:text-sm">
-                                          <div className="flex items-center gap-2 w-24">
-                                             <div className="w-3 h-3 rounded-full shrink-0" style={{backgroundColor: color}}></div>
-                                             <span className="font-medium text-gray-600 truncate">{key}</span>
-                                          </div>
-                                          <div className="flex items-center gap-3 flex-1 px-4">
-                                             <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
-                                                <div className="h-full" style={{backgroundColor: color, width: `${percent}%`}}></div>
-                                             </div>
-                                             <span className="font-bold text-gray-700 w-8 text-right">{percent}%</span>
-                                          </div>
-                                        </div>
-                                     );
-                                 })}
-                               </div>
-                             </div>
-
-                             <div>
-                               <h4 className="text-sm font-bold text-gray-700 mb-3 border-b pb-2">인기 유입 키워드 TOP 20 (해당 기간)</h4>
-                               <ul className="space-y-2 text-xs md:text-sm">
-                                  {sortedKeywords.length === 0 ? <p className="text-xs text-gray-400">데이터가 없습니다.</p> : sortedKeywords.map(([key, count], i) => (
-                                     <li key={key} className="flex justify-between items-center bg-gray-50 px-3 py-2 rounded-lg font-medium">
-                                        <span className="text-gray-700 flex items-center">
-                                           <span className={`font-bold mr-3 w-4 text-center ${i===0?'text-red-500':i===1?'text-orange-500':i===2?'text-yellow-500':'text-gray-400'}`}>{i+1}</span>
-                                           <span className="truncate max-w-[150px] md:max-w-[200px]" title={key}>{key}</span>
-                                        </span>
-                                        <span className="text-gray-400 text-xs">{count.toLocaleString()}회</span>
-                                     </li>
-                                  ))}
-                               </ul>
-                             </div>
-                          </div>
-                        );
-                    })()}
                   </div>
                 </div>
 
@@ -1174,15 +871,20 @@ export default function App() {
         </div>
       )}
 
-      {/* Board Post Modal */}
-      {isAddingBoard && (
-        <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm overflow-y-auto">
-          <motion.div initial={{scale:0.9, opacity:0}} animate={{scale:1, opacity:1}} className="bg-white rounded-3xl p-6 md:p-8 max-w-lg w-full shadow-2xl relative my-8">
-            <button onClick={() => setIsAddingBoard(false)} className="absolute right-4 top-4 text-gray-400 hover:text-gray-800 transition-colors"><X size={24}/></button>
-            <h2 className="text-2xl font-black text-gray-800 mb-6">새 게시물 작성</h2>
-            <BoardFormContent 
-               close={() => setIsAddingBoard(false)}
-               onAdd={(post: any) => setBoardData([post, ...boardData])}
+      {/* Add/Edit Modal */}
+      {(editingItem || isAddingMode) && (
+        <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm shadow-2xl">
+          <motion.div initial={{scale:0.9, opacity:0}} animate={{scale:1, opacity:1}} className="bg-white rounded-3xl p-6 md:p-8 max-w-sm w-full relative">
+            <button onClick={() => {setEditingItem(null); setIsAddingMode(false);}} className="absolute right-4 top-4 text-gray-400 hover:text-gray-800 transition-colors"><X size={24}/></button>
+            <h2 className="text-2xl font-black text-gray-800 mb-6">{isAddingMode ? '새로운 문장 추가' : '문장 수정'}</h2>
+            <FormContent 
+              editingItem={editingItem} 
+              isAddingMode={isAddingMode} 
+              close={() => {setEditingItem(null); setIsAddingMode(false);}} 
+              activeTab={activeTab}
+              setGreetingsData={setGreetingsData}
+              setTravelData={setTravelData}
+              setDailyData={setDailyData}
             />
           </motion.div>
         </div>
@@ -1190,62 +892,19 @@ export default function App() {
 
       {/* Admin Login Modal */}
       {showAdminLogin && (
-        <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm">
-          <motion.div initial={{scale:0.9, opacity:0}} animate={{scale:1, opacity:1}} className="bg-white rounded-3xl p-8 max-w-sm w-full shadow-2xl relative">
+        <div className="fixed inset-0 bg-black/60 z-[200] flex items-center justify-center p-4 backdrop-blur-sm">
+          <motion.div initial={{scale:0.9, opacity:0}} animate={{scale:1, opacity:1}} className="bg-white rounded-3xl p-6 md:p-8 max-w-sm w-full shadow-2xl relative">
             <button onClick={() => setShowAdminLogin(false)} className="absolute right-4 top-4 text-gray-400 hover:text-gray-800 transition-colors"><X size={24}/></button>
-            <h2 className="text-2xl font-black text-gray-800 mb-6 flex items-center gap-2"><Lock size={20}/> 관리자 로그인</h2>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-xs font-bold text-gray-500 mb-1">아이디</label>
-                <input type="text" value={adminId} onChange={e=>setAdminId(e.target.value)} className="w-full bg-gray-50 border-2 border-gray-200 rounded-xl px-4 py-3 font-medium focus:border-[#FF9B9B] focus:outline-none transition-colors" placeholder="아이디 입력"/>
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-12 h-12 bg-rose-100 rounded-2xl flex items-center justify-center text-rose-500">
+                <Lock size={24}/>
               </div>
-              <div>
-                <label className="block text-xs font-bold text-gray-500 mb-1">비밀번호</label>
-                <input type="password" value={adminPwd} onChange={e=>setAdminPwd(e.target.value)} className="w-full bg-gray-50 border-2 border-gray-200 rounded-xl px-4 py-3 font-medium focus:border-[#FF9B9B] focus:outline-none transition-colors" placeholder="비밀번호 입력" onKeyDown={e => {if(e.key === 'Enter') handleAdminLogin()}}/>
-              </div>
-              <button onClick={handleAdminLogin} className="w-full bg-[#FF9B9B] text-white font-bold text-lg rounded-xl py-3 hover:bg-[#FF8080] transition-colors mt-2 shadow-md">로그인</button>
+              <h2 className="text-2xl font-black text-gray-800">관리자 접속</h2>
             </div>
-          </motion.div>
-        </div>
-      )}
-
-      {/* Letter Edit Modal */}
-      {editingLetter && (
-        <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm overflow-y-auto">
-          <motion.div initial={{scale:0.9, opacity:0}} animate={{scale:1, opacity:1}} className="bg-white rounded-3xl p-6 md:p-8 max-w-sm w-full shadow-2xl relative my-8">
-            <button onClick={() => setEditingLetter(null)} className="absolute right-4 top-4 text-gray-400 hover:text-gray-800 transition-colors"><X size={24}/></button>
-            <h2 className="text-2xl font-black text-gray-800 mb-6">글자 수정</h2>
             <div className="space-y-4">
-              <LetterFormContent 
-                editingLetter={editingLetter} 
-                close={() => setEditingLetter(null)} 
-                setHiraganaData={setHiraganaData} 
-                setKatakanaData={setKatakanaData}
-              />
-            </div>
-          </motion.div>
-        </div>
-      )}
-
-      {/* Sentence Edit Modal */}
-      {(editingItem || isAddingMode) && (
-        <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm overflow-y-auto">
-          <motion.div initial={{scale:0.9, opacity:0}} animate={{scale:1, opacity:1}} className="bg-white rounded-3xl p-6 md:p-8 max-w-md w-full shadow-2xl relative my-8">
-            <button onClick={() => {setEditingItem(null); setIsAddingMode(false);}} className="absolute right-4 top-4 text-gray-400 hover:text-gray-800 transition-colors"><X size={24}/></button>
-            <h2 className="text-2xl font-black text-gray-800 mb-6">{isAddingMode ? '새 문장 추가' : '문장 수정'}</h2>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-xs font-bold text-gray-500 mb-1">분류</label>
-                {isAddingMode ? (
-                  <select disabled className="w-full bg-gray-50 border-2 border-gray-200 rounded-xl px-4 py-2 font-medium">
-                    <option value="">{activeTab === 'greetings' ? '인사말' : activeTab === 'travel' ? '여행' : '생활'}</option>
-                  </select>
-                ) : (
-                  <input type="text" value={editingItem?.tab === 'greetings' ? '인사말' : editingItem?.tab === 'travel' ? '여행' : '생활'} disabled className="w-full bg-gray-100 border-2 border-gray-200 rounded-xl px-4 py-2 font-medium text-gray-500"/>
-                )}
-              </div>
-              
-              <FormContent editingItem={editingItem} isAddingMode={isAddingMode} close={() => {setEditingItem(null); setIsAddingMode(false);}} activeTab={activeTab} setGreetingsData={setGreetingsData} setTravelData={setTravelData} setDailyData={setDailyData}/>
+              <input type="text" value={adminId} onChange={e=>setAdminId(e.target.value)} placeholder="아이디" className="w-full bg-gray-50 border-2 border-gray-200 rounded-xl px-4 py-3 font-medium focus:border-rose-400 focus:outline-none"/>
+              <input type="password" value={adminPwd} onChange={e=>setAdminPwd(e.target.value)} placeholder="비밀번호" className="w-full bg-gray-50 border-2 border-gray-200 rounded-xl px-4 py-3 font-medium focus:border-rose-400 focus:outline-none" onKeyDown={e => e.key === 'Enter' && handleAdminLogin()}/>
+              <button onClick={handleAdminLogin} className="w-full bg-rose-400 text-white font-bold py-3 rounded-xl shadow-md hover:bg-rose-500 transition-colors">로그인</button>
             </div>
           </motion.div>
         </div>
@@ -1254,49 +913,6 @@ export default function App() {
   );
 }
 
-function FormContent({editingItem, isAddingMode, close, activeTab, setGreetingsData, setTravelData, setDailyData}: any) {
-  const [jp, setJp] = useState(editingItem ? editingItem?.item?.jp : '');
-  const [ko, setKo] = useState(editingItem ? editingItem?.item?.ko : '');
-  const [mean, setMean] = useState(editingItem ? editingItem?.item?.mean : '');
-
-  const handleSave = () => {
-    if(!jp || !ko || !mean) return alert('모든 칸을 입력해주세요.');
-    const newItem = { jp, ko, mean };
-    
-    const updateTarget = (prev: any[]) => {
-      if(isAddingMode) return [...prev, newItem];
-      const next = [...prev];
-      next[editingItem.index] = newItem;
-      return next;
-    };
-
-    const targetTab = isAddingMode ? activeTab : editingItem.tab;
-    if(targetTab === 'greetings') setGreetingsData(updateTarget);
-    if(targetTab === 'travel') setTravelData(updateTarget);
-    if(targetTab === 'daily') setDailyData(updateTarget);
-    close();
-  };
-
-  return (
-    <>
-      <div>
-        <label className="block text-xs font-bold text-gray-500 mb-1">일본어 (漢字/ひらがな)</label>
-        <input type="text" value={jp} onChange={e=>setJp(e.target.value)} className="w-full bg-white border-2 border-gray-200 rounded-xl px-4 py-3 font-medium focus:border-[#FF9B9B] focus:outline-none transition-colors" placeholder="예: こんにちは"/>
-      </div>
-      <div>
-        <label className="block text-xs font-bold text-gray-500 mb-1">한국어 발음</label>
-        <input type="text" value={ko} onChange={e=>setKo(e.target.value)} className="w-full bg-white border-2 border-gray-200 rounded-xl px-4 py-3 font-medium focus:border-[#FF9B9B] focus:outline-none transition-colors" placeholder="예: 콘니치와"/>
-      </div>
-      <div>
-        <label className="block text-xs font-bold text-gray-500 mb-1">뜻</label>
-        <input type="text" value={mean} onChange={e=>setMean(e.target.value)} className="w-full bg-white border-2 border-gray-200 rounded-xl px-4 py-3 font-medium focus:border-[#FF9B9B] focus:outline-none transition-colors" placeholder="예: 안녕하세요"/>
-      </div>
-      <button onClick={handleSave} className="w-full bg-[#4ECDC4] text-white font-bold text-lg rounded-xl py-3 hover:bg-[#45B7AF] transition-colors mt-6 shadow-md">{isAddingMode ? '추가하기' : '수정하기'}</button>
-    </>
-  );
-}
-
-// Ensure the handleAdminLogin is defined inside App component
 function TabButton({ active, onClick, label }: { active: boolean, onClick: () => void, label: string }) {
   return (
     <button
@@ -1422,127 +1038,51 @@ const SentenceCard: FC<SentenceCardProps> = ({ item, index, onPlay, isAdmin, isS
   );
 }
 
-function BoardFormContent({ close, onAdd }: any) {
-  const [title, setTitle] = useState('');
-  const [content, setContent] = useState('');
-  const [image, setImage] = useState('');
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
-
-  const resizeImage = (file: File, callback: (base64: string) => void) => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const img = new window.Image();
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        let width = img.width;
-        let height = img.height;
-        const MAX_DIM = 800;
-        if (width > MAX_DIM || height > MAX_DIM) {
-          if (width > height) {
-            height *= MAX_DIM / width;
-            width = MAX_DIM;
-          } else {
-            width *= MAX_DIM / height;
-            height = MAX_DIM;
-          }
-        }
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext('2d');
-        ctx?.drawImage(img, 0, 0, width, height);
-        callback(canvas.toDataURL('image/jpeg', 0.6));
-      };
-      if (typeof e.target?.result === 'string') {
-        img.src = e.target.result;
-      }
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const handleMainImage = (e: any) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      if (file.size > 5 * 1024 * 1024) {
-         alert('이미지는 5MB 이내로 첨부 가능합니다.');
-         return;
-      }
-      resizeImage(file, (resized) => setImage(resized));
-    }
-  };
-
-  const handleInsertImage = (e: any) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      if (file.size > 5 * 1024 * 1024) {
-         alert('이미지는 5MB 이내로 첨부 가능합니다.');
-         return;
-      }
-      resizeImage(file, (resized) => {
-         const imgMarkdown = `\n![image](${resized})\n`;
-         if (textareaRef.current) {
-            const start = textareaRef.current.selectionStart;
-            const end = textareaRef.current.selectionEnd;
-            const newContent = content.substring(0, start) + imgMarkdown + content.substring(end);
-            setContent(newContent);
-            // Move cursor to after image
-            setTimeout(() => {
-               if (textareaRef.current) {
-                  textareaRef.current.selectionStart = textareaRef.current.selectionEnd = start + imgMarkdown.length;
-                  textareaRef.current.focus();
-               }
-            }, 0);
-         } else {
-            setContent(prev => prev + imgMarkdown);
-         }
-      });
-    }
-    // reset input
-    e.target.value = '';
-  };
+function FormContent({editingItem, isAddingMode, close, activeTab, setGreetingsData, setTravelData, setDailyData}: any) {
+  const [jp, setJp] = useState(editingItem ? editingItem?.item?.jp : '');
+  const [ko, setKo] = useState(editingItem ? editingItem?.item?.ko : '');
+  const [mean, setMean] = useState(editingItem ? editingItem?.item?.mean : '');
 
   const handleSave = () => {
-    if (!title.trim() || !content.trim()) {
-      alert('제목과 내용을 입력해주세요.');
-      return;
-    }
-    onAdd({
-      id: Date.now().toString(),
-      title,
-      content,
-      image,
-      createdAt: Date.now()
-    });
+    if(!jp || !ko || !mean) return alert('모든 칸을 입력해주세요.');
+    const newItem = { jp, ko, mean };
+    
+    const updateTarget = (prev: any[]) => {
+      if(isAddingMode) return [...prev, newItem];
+      const next = [...prev];
+      next[editingItem.index] = newItem;
+      return next;
+    };
+
+    if(activeTab === 'greetings') setGreetingsData(updateTarget);
+    if(activeTab === 'travel') setTravelData(updateTarget);
+    if(activeTab === 'daily') setDailyData(updateTarget);
     close();
   };
 
   return (
-    <div className="space-y-4">
-      <div>
-        <label className="block text-xs font-bold text-gray-500 mb-1">제목</label>
-        <input type="text" value={title} onChange={e=>setTitle(e.target.value)} className="w-full bg-white border-2 border-gray-200 rounded-xl px-4 py-3 font-medium focus:border-orange-400 focus:outline-none" placeholder="게시물 제목"/>
-      </div>
-      <div>
-        <div className="flex justify-between items-end mb-1">
-           <label className="block text-xs font-bold text-gray-500">내용</label>
-           <div>
-              <label className="cursor-pointer bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs px-2 py-1 rounded border border-gray-200 shadow-sm transition-colors">
-                <span className="flex items-center gap-1"><Image size={12}/> 본문에 이미지 삽입</span>
-                <input type="file" accept="image/*" onChange={handleInsertImage} className="hidden" />
-              </label>
-           </div>
+    <>
+      <div className="space-y-4">
+        <div>
+          <label className="block text-xs font-bold text-gray-500 mb-1">일본어 문장</label>
+          <input type="text" value={jp} onChange={e=>setJp(e.target.value)} className="w-full bg-white border-2 border-gray-200 rounded-xl px-4 py-3 font-medium focus:border-red-400 focus:outline-none transition-colors" placeholder="예: こんにちは"/>
         </div>
-        <textarea ref={textareaRef} value={content} onChange={e=>setContent(e.target.value)} className="w-full bg-white border-2 border-gray-200 rounded-xl px-4 py-3 font-medium focus:border-orange-400 focus:outline-none min-h-[250px]" placeholder="글을 작성해주세요... 마크다운과 본문 이미지 삽입이 지원됩니다!"/>
+        <div>
+          <label className="block text-xs font-bold text-gray-500 mb-1">한국어 발음</label>
+          <input type="text" value={ko} onChange={e=>setKo(e.target.value)} className="w-full bg-white border-2 border-gray-200 rounded-xl px-4 py-3 font-medium focus:border-red-400 focus:outline-none transition-colors" placeholder="예: 콘니치와"/>
+        </div>
+        <div>
+          <label className="block text-xs font-bold text-gray-500 mb-1">뜻 (의미)</label>
+          <input type="text" value={mean} onChange={e=>setMean(e.target.value)} className="w-full bg-white border-2 border-gray-200 rounded-xl px-4 py-3 font-medium focus:border-red-400 focus:outline-none transition-colors" placeholder="예: 안녕하세요"/>
+        </div>
       </div>
-      <div>
-        <label className="block text-xs font-bold text-gray-500 mb-1">메인 썸네일 이미지 (선택)</label>
-        <input type="file" accept="image/*" onChange={handleMainImage} className="w-full bg-white border-2 border-gray-200 rounded-xl px-4 py-2 font-medium text-sm"/>
-        {image && <img src={image} className="mt-3 h-32 object-contain rounded-lg border" />}
+      <div className="mt-6">
+        <button onClick={handleSave} className="w-full bg-[#4ECDC4] text-white font-bold text-base rounded-xl py-3 hover:bg-[#45B7AF] transition-colors shadow-md">저장하기</button>
       </div>
-      <div className="pt-2">
-        <button onClick={handleSave} className="w-full bg-orange-400 text-white font-bold text-lg rounded-xl py-3 hover:bg-orange-500 transition-colors shadow-md">작성하기</button>
-      </div>
-    </div>
+    </>
   );
 }
+
+
 
 

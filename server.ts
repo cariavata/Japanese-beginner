@@ -70,6 +70,12 @@ async function startServer() {
     res.send(data.robotsTxt || 'User-agent: *\nAllow: /');
   });
 
+  app.get("/ads.txt", (req, res) => {
+    const data = getSeoData();
+    res.type('text/plain');
+    res.send(data.adsTxt || '');
+  });
+
   app.get("/sitemap.xml", (req, res) => {
     const data = getSeoData();
     res.type('application/xml');
