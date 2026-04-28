@@ -4,8 +4,10 @@
  */
 
 import { useState, useEffect, useCallback, useRef, FC } from 'react';
-import { Volume2, Plane, Home, MessageSquare, Info, Music, Music2, Pencil, Trash2, Plus, X, Lock, Settings, BarChart2 } from 'lucide-react';
+import { Volume2, Plane, Home, MessageSquare, Info, Music, Music2, Pencil, Trash2, Plus, X, Lock, Settings, BarChart2, Image } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { saveAsset, getAsset, deleteAsset } from './lib/db';
 
 // --- Data Section ---
@@ -883,12 +885,14 @@ export default function App() {
                               </button>
                            )}
                         </div>
-                        <p className="text-gray-600 text-sm md:text-base whitespace-pre-wrap leading-relaxed">{post.content}</p>
                         {post.image && (
-                          <div className="mt-4 rounded-xl overflow-hidden border border-gray-100">
+                          <div className="mb-4 rounded-xl overflow-hidden border border-gray-100">
                             <img src={post.image} alt={post.title} className="max-w-full h-auto object-contain max-h-96" />
                           </div>
                         )}
+                        <div className="prose prose-sm md:prose-base max-w-none prose-img:rounded-xl prose-img:border prose-img:border-gray-100 markdown-body">
+                          <ReactMarkdown remarkPlugins={[remarkGfm]}>{post.content}</ReactMarkdown>
+                        </div>
                         <div className="text-xs text-gray-400 mt-4 text-right">
                            {new Date(post.createdAt).toLocaleString()}
                         </div>
@@ -1422,18 +1426,78 @@ function BoardFormContent({ close, onAdd }: any) {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [image, setImage] = useState('');
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  const handleImage = (e: any) => {
+  const resizeImage = (file: File, callback: (base64: string) => void) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new window.Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+        const MAX_DIM = 800;
+        if (width > MAX_DIM || height > MAX_DIM) {
+          if (width > height) {
+            height *= MAX_DIM / width;
+            width = MAX_DIM;
+          } else {
+            width *= MAX_DIM / height;
+            height = MAX_DIM;
+          }
+        }
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx?.drawImage(img, 0, 0, width, height);
+        callback(canvas.toDataURL('image/jpeg', 0.6));
+      };
+      if (typeof e.target?.result === 'string') {
+        img.src = e.target.result;
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleMainImage = (e: any) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 2 * 1024 * 1024) {
-         alert('이미지는 2MB 이내로 첨부 가능합니다.');
+      if (file.size > 5 * 1024 * 1024) {
+         alert('이미지는 5MB 이내로 첨부 가능합니다.');
          return;
       }
-      const reader = new FileReader();
-      reader.onload = (ev) => setImage(ev.target?.result as string);
-      reader.readAsDataURL(file);
+      resizeImage(file, (resized) => setImage(resized));
     }
+  };
+
+  const handleInsertImage = (e: any) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+         alert('이미지는 5MB 이내로 첨부 가능합니다.');
+         return;
+      }
+      resizeImage(file, (resized) => {
+         const imgMarkdown = `\n![image](${resized})\n`;
+         if (textareaRef.current) {
+            const start = textareaRef.current.selectionStart;
+            const end = textareaRef.current.selectionEnd;
+            const newContent = content.substring(0, start) + imgMarkdown + content.substring(end);
+            setContent(newContent);
+            // Move cursor to after image
+            setTimeout(() => {
+               if (textareaRef.current) {
+                  textareaRef.current.selectionStart = textareaRef.current.selectionEnd = start + imgMarkdown.length;
+                  textareaRef.current.focus();
+               }
+            }, 0);
+         } else {
+            setContent(prev => prev + imgMarkdown);
+         }
+      });
+    }
+    // reset input
+    e.target.value = '';
   };
 
   const handleSave = () => {
@@ -1458,12 +1522,20 @@ function BoardFormContent({ close, onAdd }: any) {
         <input type="text" value={title} onChange={e=>setTitle(e.target.value)} className="w-full bg-white border-2 border-gray-200 rounded-xl px-4 py-3 font-medium focus:border-orange-400 focus:outline-none" placeholder="게시물 제목"/>
       </div>
       <div>
-        <label className="block text-xs font-bold text-gray-500 mb-1">내용</label>
-        <textarea value={content} onChange={e=>setContent(e.target.value)} className="w-full bg-white border-2 border-gray-200 rounded-xl px-4 py-3 font-medium focus:border-orange-400 focus:outline-none min-h-[150px]" placeholder="글을 작성해주세요..."/>
+        <div className="flex justify-between items-end mb-1">
+           <label className="block text-xs font-bold text-gray-500">내용</label>
+           <div>
+              <label className="cursor-pointer bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs px-2 py-1 rounded border border-gray-200 shadow-sm transition-colors">
+                <span className="flex items-center gap-1"><Image size={12}/> 본문에 이미지 삽입</span>
+                <input type="file" accept="image/*" onChange={handleInsertImage} className="hidden" />
+              </label>
+           </div>
+        </div>
+        <textarea ref={textareaRef} value={content} onChange={e=>setContent(e.target.value)} className="w-full bg-white border-2 border-gray-200 rounded-xl px-4 py-3 font-medium focus:border-orange-400 focus:outline-none min-h-[250px]" placeholder="글을 작성해주세요... 마크다운과 본문 이미지 삽입이 지원됩니다!"/>
       </div>
       <div>
-        <label className="block text-xs font-bold text-gray-500 mb-1">이미지 첨부 (선택, 최대 2MB)</label>
-        <input type="file" accept="image/*" onChange={handleImage} className="w-full bg-white border-2 border-gray-200 rounded-xl px-4 py-2 font-medium text-sm"/>
+        <label className="block text-xs font-bold text-gray-500 mb-1">메인 썸네일 이미지 (선택)</label>
+        <input type="file" accept="image/*" onChange={handleMainImage} className="w-full bg-white border-2 border-gray-200 rounded-xl px-4 py-2 font-medium text-sm"/>
         {image && <img src={image} className="mt-3 h-32 object-contain rounded-lg border" />}
       </div>
       <div className="pt-2">
